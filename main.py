@@ -1,5 +1,6 @@
 from fastapi import FastAPI
-from models import Todo, session
+from app.db.db import session
+from app.db.models import Todo
 
 app = FastAPI()
 
