@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 import datetime
 from fastapi.responses import RedirectResponse
 from jose import jwt
-from app.core.auth import sso
+from app.core.auth import sso, get_logged_user
 import os
+from fastapi_sso.sso.base import OpenID
 
 router = APIRouter()
 
@@ -32,8 +33,16 @@ async def login_callback(request: Request):
     # Create a JWT with the user's OpenID
     expiration = datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(days=1)
     token = jwt.encode({"pld": openid.dict(), "exp": expiration, "sub": openid.id}, key=os.getenv('GOOGLE_SECRET_KEY'), algorithm="HS256")
-    response = RedirectResponse(url="/protected")
+    response = RedirectResponse(url="/auth/success")
     response.set_cookie(
         key="token", value=token, expires=expiration
-    )  # This cookie will make sure /protected knows the user
+    )
     return response
+
+@router.get("/auth/success")
+async def login_success(user: OpenID = Depends(get_logged_user)):
+    """This endpoint will say hello to the logged user.
+    If the user is not logged, it will return a 401 error from `get_logged_user`."""
+    return {
+        "message": f"Hello, {user.email}!",
+    }
