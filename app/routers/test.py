@@ -1,6 +1,8 @@
-from fastapi import APIRouter
+from fastapi import APIRouter,Depends
 from app.db.db import session
 from app.db.models import Todo
+from app.core.auth import get_logged_user
+from fastapi_sso.sso.base import OpenID
 
 router = APIRouter()
 
@@ -42,3 +44,11 @@ async def delete_todo(id: int):
     session.delete(todo)
     session.commit()
     return {"todo deleted": todo.text}
+
+@router.get("/protected")
+async def protected_endpoint(user: OpenID = Depends(get_logged_user)):
+    """This endpoint will say hello to the logged user.
+    If the user is not logged, it will return a 401 error from `get_logged_user`."""
+    return {
+        "message": f"Hello, {user.email}!",
+    }

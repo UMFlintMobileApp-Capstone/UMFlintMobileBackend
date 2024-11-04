@@ -1,21 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 import datetime
 from fastapi.responses import RedirectResponse
-from fastapi_sso.sso.base import OpenID
 from jose import jwt
-from app.core.auth import get_logged_user, sso
+from app.core.auth import sso
 import os
 
 router = APIRouter()
-
-@router.get("/protected")
-async def protected_endpoint(user: OpenID = Depends(get_logged_user)):
-    """This endpoint will say hello to the logged user.
-    If the user is not logged, it will return a 401 error from `get_logged_user`."""
-    return {
-        "message": f"Hello, {user.email}!",
-    }
-
 
 @router.get("/auth/login")
 async def login():
