@@ -1,6 +1,5 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException, Request
 import datetime
-from fastapi import Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from fastapi_sso.sso.base import OpenID
 from jose import jwt
