@@ -3,6 +3,17 @@ from app.routers import test, auth
 
 app = FastAPI()
 
+""" 
+main.py:
+
+The main interface for the backend.
+This is where routes are added to the FastAPI application.
+
+You do that by including your route located in app/routers
+to the import statement, and then doing below:
+    app.include_router(EXAMPLE.router)
+"""
+
 app.include_router(test.router)
 app.include_router(auth.router)
 
