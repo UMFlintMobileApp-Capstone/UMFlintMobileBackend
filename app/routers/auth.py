@@ -6,6 +6,14 @@ from app.core.auth import sso, get_logged_user
 import os
 from fastapi_sso.sso.base import OpenID
 
+"""
+<app/routers/auth.py>
+
+This is the authentication route that handles managing 
+user authorization such as login, logout, etc.
+
+"""
+
 router = APIRouter()
 
 @router.get("/auth/login")
