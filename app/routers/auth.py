@@ -18,7 +18,7 @@ async def login():
 @router.get("/auth/logout")
 async def logout():
     """Forget the user's session."""
-    response = RedirectResponse(url="/protected")
+    response = RedirectResponse(url="/")
     response.delete_cookie(key="token")
     return response
 

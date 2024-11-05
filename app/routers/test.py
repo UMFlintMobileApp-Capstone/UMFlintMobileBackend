@@ -5,7 +5,7 @@ from app.core.auth import get_logged_user
 from fastapi_sso.sso.base import OpenID
 
 """ 
-app/routers/test.py:
+<app/routers/test.py>
 
 This is a test route that we can remove once we don't
 need it anymore.
@@ -29,18 +29,28 @@ And there you can then call user to get the user's
 information.
 """
 
+# create the router
 router = APIRouter()
 
+# create task via POST
 @router.post("/test/create")
 async def create_todo(text: str, is_complete: bool = False, user: OpenID = Depends(get_logged_user)):
+    # create an instance of the Todo class
     test = Todo(text=text, is_done=is_complete)
+
+    # add the instance to database and commit it to the database
     session.add(test)
     session.commit()
+
+    # return a value
     return {"todo added": test.text}
 
 @router.get("/test/")
 async def get_all_todos(user: OpenID = Depends(get_logged_user)):
+    # query all Todos in the database
     todos_query = session.query(Todo)
+
+    # return all
     return todos_query.all()
 
 @router.get("/test/done")

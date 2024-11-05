@@ -4,6 +4,13 @@ from sqlalchemy.engine import URL
 from sqlalchemy.orm import sessionmaker
 import os
 
+"""
+<app/db/db.py>
+
+This is the database creation and connection script.
+
+"""
+
 load_dotenv()
 
 url = URL.create(

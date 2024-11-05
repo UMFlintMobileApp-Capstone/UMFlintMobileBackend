@@ -2,6 +2,13 @@ from app.db.db import engine
 from sqlalchemy.orm import declarative_base
 from sqlalchemy import Column, Integer, String, Boolean
 
+"""
+<app/db/models.py>
+
+This is where you place models (tables) for the database.
+
+"""
+
 Base = declarative_base()
 
 class Todo(Base):
