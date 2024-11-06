@@ -38,7 +38,8 @@ class Messages(Base):
     subject = Column(String)
     message = Column(Text)
     role = Column(Integer)
-    date = Column(DateTime)
+    dateStart = Column(DateTime)
+    dateEnd = Column(DateTime)
 
 class Maps(Base):
     __tablename__ = "Maps"
@@ -54,7 +55,5 @@ class BuildingHours(Base):
     building = Column(String, primary_key=True)
     open_at = Column(DateTime)
     close_at = Column(DateTime)
-
-
 
 Base.metadata.create_all(engine)
