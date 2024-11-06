@@ -25,7 +25,7 @@ class Events(Base):
     title = Column(String)
     photo = Column(String)
     location = Column(String)
-    description = Column(String)
+    description = Column(Text)
     type = Column(String)
     start_at = Column(DateTime)
     end_at = Column(DateTime)
