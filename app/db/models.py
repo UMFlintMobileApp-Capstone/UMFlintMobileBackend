@@ -40,4 +40,21 @@ class Messages(Base):
     role = Column(Integer)
     date = Column(DateTime)
 
+class Maps(Base):
+    __tablename__ = "Maps"
+
+    id = Column(Integer, primary_key=True)
+    building_name = Column(String)
+    floor_num = Column(Integer)
+    map_img = Column(String)
+
+class BuildingHours(Base):
+    __tablename__ = "Building Hours"
+
+    building = Column(String, primary_key=True)
+    open_at = Column(DateTime)
+    close_at = Column(DateTime)
+
+
+
 Base.metadata.create_all(engine)
