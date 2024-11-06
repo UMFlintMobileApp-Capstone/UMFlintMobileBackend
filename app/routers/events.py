@@ -32,7 +32,7 @@ information.
 router = APIRouter()
 
 @router.get("/events/testing")
-async def testing(user: OpenID = Depends(get_logged_user)):
+async def testing():
     events_query = session.query(Events)
 
     return events_query.all()
