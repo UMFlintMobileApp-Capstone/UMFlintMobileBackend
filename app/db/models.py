@@ -1,6 +1,6 @@
 from app.db.db import engine
 from sqlalchemy.orm import declarative_base
-from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text
 
 """
 <app/db/models.py>
@@ -30,5 +30,14 @@ class Events(Base):
     start_at = Column(DateTime)
     end_at = Column(DateTime)
     group_name = Column(String)
+
+class Messages(Base):
+    __tablename__ = "Messages"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    subject = Column(String)
+    message = Column(Text)
+    role = Column(Integer)
+    date = Column(DateTime)
 
 Base.metadata.create_all(engine)
