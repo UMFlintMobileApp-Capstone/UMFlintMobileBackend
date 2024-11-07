@@ -1,5 +1,8 @@
 from fastapi import FastAPI
 from app.routers import test, auth
+import models
+
+
 
 app = FastAPI()
 
@@ -25,3 +28,4 @@ app.include_router(auth.router)
 @app.get("/")
 def read_root():
     return {"status": "success", "message": "Hello world!"}
+    
