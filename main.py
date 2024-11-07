@@ -1,7 +1,5 @@
 from fastapi import FastAPI
 from app.routers import test, auth
-import models
-
 
 
 app = FastAPI()

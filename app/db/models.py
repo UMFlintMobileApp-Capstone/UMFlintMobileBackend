@@ -56,4 +56,16 @@ class BuildingHours(Base):
     open_at = Column(DateTime)
     close_at = Column(DateTime)
 
+class User(Base):
+    __tablename__  = "Users"
+    id = Column(Integer, primary_key=True)
+    username = Column(String)
+    role = Column(Integer)
+
+
+class Role(Base):
+    __tablename__ = "Roles"
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+
 Base.metadata.create_all(engine)
