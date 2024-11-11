@@ -1,5 +1,8 @@
 from fastapi import APIRouter
-import requests
+from app.core.umich_api import get_announcement_items
+from app.db.db import session
+from app.db.models import Announcements
+from datetime import datetime
 
 """ 
 <app/routers/messaging.py>
@@ -12,10 +15,9 @@ router = APIRouter()
 @router.get("/announcements/")
 def getMessages():
     index = 0
-    announcements = requests.get('https://www.umflint.edu/wp-json/wp-content-types/announcements').json()
 
     allAnnouncements=[]
-    for announcement in announcements['data']:
+    for announcement in get_announcement_items()['data']:
         if announcement['display_start']!="":
             dateStart = announcement['display_start']
         else:
@@ -33,9 +35,27 @@ def getMessages():
                     'dateEnd': announcement['display_end'],
                     'roles': roles
                 }
-        
+
         allAnnouncements.append(announcementJson)
         index = index+1
+
+    for announcement in session.query(Announcements).all():
+        roles = []
+        for role in announcement.role.split(","):
+            roles.append({'role': role})
+
+        announcementJson = {
+                    'id': announcement.id,
+                    'title': announcement.title,
+                    'description':announcement.description,
+                    'dateStart': announcement.dateStart,
+                    'dateEnd': announcement.dateEnd,
+                    'roles': roles
+                }
+
+        allAnnouncements.append(announcementJson)
+
+    allAnnouncements.sort(key=lambda d: datetime.strptime(d['dateStart'], "%Y-%m-%d %H:%M:%S"), reverse=True)
 
     return allAnnouncements
 

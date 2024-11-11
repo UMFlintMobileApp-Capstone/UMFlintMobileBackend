@@ -31,13 +31,13 @@ class Events(Base):
     end_at = Column(DateTime)
     group_name = Column(String)
 
-class Messages(Base):
-    __tablename__ = "Messages"
+class Announcements(Base):
+    __tablename__ = "Announcements"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    subject = Column(String)
-    message = Column(Text)
-    role = Column(Integer)
+    title = Column(String)
+    description = Column(Text)
+    role = Column(String)
     dateStart = Column(DateTime)
     dateEnd = Column(DateTime)
 
@@ -84,7 +84,7 @@ class News(Base):
 
 ## temporary setting of composite key
 ## will have to see best course of action for storing
-class Announcements(Base):
+""" class Announcements(Base):
     __tablename__ = "Announcements"
 
     id = Column(Integer, primary_key=True)
@@ -95,7 +95,7 @@ class Announcements(Base):
     tags = Column(String)
     published_at = Column(DateTime)
     display_start = Column(DateTime)
-    display_end = Column(DateTime)
+    display_end = Column(DateTime) """
 
 
 
