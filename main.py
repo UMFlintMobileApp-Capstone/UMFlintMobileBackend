@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 from app.routers import test, auth
 
-
 app = FastAPI()
 
 """ 

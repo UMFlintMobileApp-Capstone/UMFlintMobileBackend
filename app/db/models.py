@@ -1,4 +1,4 @@
-from db import engine
+from app.db.db import engine
 from sqlalchemy.orm import declarative_base
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text
 
