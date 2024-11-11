@@ -1,31 +1,13 @@
 from fastapi import APIRouter,Depends
 from fastapi_sso.sso.base import OpenID
-import app.core.umich_api as api
-import app.db.db as db
+from app.core.umich_api import get_news_items
+from app.db.db import session
+from app.db.models import News
+from datetime import datetime
 
 """ 
-<app/routers/test.py>
+<app/routers/news.py>
 
-This is a test route that we can remove once we don't
-need it anymore.
-
-It's a basic task management tool depending on the user 
-being logged in.
-
-You create a router by using:
-    router = APIRouter()
-
-Then you can create a route by:
-    @router.{GET/POST/PUT/DELETE}("SLUG")
-    async def SLUG(PARAMETERS):
-        return JSON_OBJECT
-
-If you want authorization dependency, just add the
-parameter:
-    user: OpenID = Depends(get_logged_user)
-
-And there you can then call user to get the user's 
-information.
 """
 
 router = APIRouter()
@@ -34,7 +16,35 @@ router = APIRouter()
 ## how that is done needs to be determined by how we display things
 ## suggestion: maybe we only return maximum of 5-6 results period, umich returns 4 currently
 ## we can get the other 1-2 from our database (select top 2 desc)
-@router.get("/news/items")
-async def items():
-    return api.get_news_items()
+@router.get("/news/get/{items}")
+def items(items):
+    articles = []
+
+    for article in get_news_items():
+        articles.append(article)
+
+    for article in session.query(News).all():
+
+        articles.append(
+            {
+                'id': article.id,
+                'title': article.title,
+                'url': article.url,
+                'publication_date': article.publication_date,
+                'excerpt':article.excerpt,
+                'image_url': article.image_url,
+                'author': {
+                    'name': article.author_name,
+                    'email': article.author_email
+                }
+            }
+        )
+
+
+    articles.sort(key=lambda d: datetime.strptime(d['publication_date'], "%Y-%m-%d %H:%M:%S"), reverse=True)
+    
+    if(items.isnumeric()):
+        return articles[:int(items)]
+    else:
+        return articles
 
