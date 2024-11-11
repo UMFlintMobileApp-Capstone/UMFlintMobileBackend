@@ -12,8 +12,8 @@ from datetime import datetime
 # create the router
 router = APIRouter()
 
-@router.get("/announcements/")
-def getMessages():
+@router.get("/announcements/get/{items}")
+def getMessages(items):
     index = 0
 
     allAnnouncements=[]
@@ -57,7 +57,10 @@ def getMessages():
 
     allAnnouncements.sort(key=lambda d: datetime.strptime(d['dateStart'], "%Y-%m-%d %H:%M:%S"), reverse=True)
 
-    return allAnnouncements
+    if(items.isnumeric()):
+        return allAnnouncements[:int(items)]
+    else:
+        return allAnnouncements
 
 
 def getRoleId(name):
