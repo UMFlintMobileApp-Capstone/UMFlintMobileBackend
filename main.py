@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routers import test, auth
+from app.routers import test, auth, messaging
 
 app = FastAPI()
 
@@ -19,8 +19,9 @@ instance messaging route, maps route, events route, etc)
 for ease of understanding.
 """
 
-app.include_router(test.router)
 app.include_router(auth.router)
+app.include_router(messaging.router)
+app.include_router(test.router)
 
 @app.get("/")
 def read_root():
