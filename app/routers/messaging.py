@@ -9,34 +9,28 @@ import requests
 # create the router
 router = APIRouter()
 
-@router.get("/messages/")
+@router.get("/announcements/")
 def getMessages():
     index = 0
     announcements = requests.get('https://www.umflint.edu/wp-json/wp-content-types/announcements').json()
 
     allAnnouncements=[]
     for announcement in announcements['data']:
-        id = announcement['id']
-        title = announcement['title']
-        description = announcement['description']
-
         if announcement['display_start']!="":
             dateStart = announcement['display_start']
         else:
             dateStart = announcement['published_at']
 
-        dateEnd = announcement['display_end']
-
         roles = []
         for role in announcement['affiliations']:
-            roles.append({'role':getRoleId(role['name'])})
+            roles.append({'role': getRoleId(role['name'])})
 
-        announcementJson= {
-                    'id': id,
-                    'title': title,
-                    'description':description,
+        announcementJson = {
+                    'id': announcement['id'],
+                    'title': announcement['title'],
+                    'description':announcement['description'],
                     'dateStart': dateStart,
-                    'dateEnd': dateEnd,
+                    'dateEnd': announcement['display_end'],
                     'roles': roles
                 }
         
