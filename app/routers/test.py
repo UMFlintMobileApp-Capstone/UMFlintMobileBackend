@@ -1,8 +1,6 @@
-from fastapi import APIRouter,Depends
+from fastapi import APIRouter
 from app.db.db import session
 from app.db.models import Todo
-from app.core.auth import get_logged_user
-from fastapi_sso.sso.base import OpenID
 
 """ 
 <app/routers/test.py>
@@ -34,7 +32,7 @@ router = APIRouter()
 
 # create task via POST
 @router.post("/test/create")
-async def create_todo(text: str, is_complete: bool = False, user: OpenID = Depends(get_logged_user)):
+async def create_todo(text: str, is_complete: bool = False):
     # create an instance of the Todo class
     test = Todo(text=text, is_done=is_complete)
 
@@ -46,7 +44,7 @@ async def create_todo(text: str, is_complete: bool = False, user: OpenID = Depen
     return {"todo added": test.text}
 
 @router.get("/test/")
-async def get_all_todos(user: OpenID = Depends(get_logged_user)):
+async def get_all_todos():
     # query all Todos in the database
     todos_query = session.query(Todo)
 
@@ -54,7 +52,7 @@ async def get_all_todos(user: OpenID = Depends(get_logged_user)):
     return todos_query.all()
 
 @router.get("/test/done")
-async def list_done_todos(user: OpenID = Depends(get_logged_user)):
+async def list_done_todos():
     todos_query = session.query(Todo)
     done_todos_query = todos_query.filter(Todo.is_done==True)
     return done_todos_query.all()
@@ -63,8 +61,7 @@ async def list_done_todos(user: OpenID = Depends(get_logged_user)):
 async def update_todo(
     id: int,
     new_text: str = "",
-    is_complete: bool = False,
-    user: OpenID = Depends(get_logged_user)
+    is_complete: bool = False
 ):
     todo_query = session.query(Todo).filter(Todo.id==id)
     todo = todo_query.first()
@@ -75,7 +72,7 @@ async def update_todo(
     session.commit()
 
 @router.delete("/test/delete/{id}")
-async def delete_todo(id: int, user: OpenID = Depends(get_logged_user)):
+async def delete_todo(id: int):
     todo = session.query(Todo).filter(Todo.id==id).first() # Todo object
     session.delete(todo)
     session.commit()
