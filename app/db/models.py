@@ -85,4 +85,13 @@ class News(Base):
     author_name = Column(String)
     author_email = Column(String)
 
+class Messages(Base):
+    __tablename__ = "Messages"
+
+    id = Column(Integer, primary_key=True)
+    sendUser = Column(Integer)
+    sentUsers = Column(String)
+    message = Column(Text)
+    sendDate = Column(DateTime)
+
 Base.metadata.create_all(engine)
