@@ -1,6 +1,6 @@
 from app.db.db import engine
 from sqlalchemy.orm import declarative_base
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, UUID
 
 """
 <app/db/models.py>
@@ -89,9 +89,16 @@ class Messages(Base):
     __tablename__ = "Messages"
 
     id = Column(Integer, primary_key=True)
-    sendUser = Column(Integer)
-    sentUsers = Column(String)
+    user = Column(Integer)
+    messageUuid = Column(UUID)
+    chatUuid = Column(UUID)
     message = Column(Text)
     sendDate = Column(DateTime)
+
+class Threads(Base):
+    __tablename__ = "Threads"
+
+    uuid = Column(UUID, primary_key=True)
+    user = Column(Integer, primary_key=True)
 
 Base.metadata.create_all(engine)
