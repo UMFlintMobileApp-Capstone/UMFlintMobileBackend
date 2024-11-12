@@ -19,12 +19,13 @@ Then you can create a route by:
     async def SLUG(PARAMETERS):
         return JSON_OBJECT
 
-If you want authorization dependency, just add the
-parameter:
-    user: OpenID = Depends(get_logged_user)
+If you want authorization, use from app.core.auth:
+    getUserDetails(token) 
+and it will return a User if they exist, and throw
+a 403 if they do not.
 
-And there you can then call user to get the user's 
-information.
+Handle the exception to deal with the case of a 
+un logged-in user.
 """
 
 # create the router
