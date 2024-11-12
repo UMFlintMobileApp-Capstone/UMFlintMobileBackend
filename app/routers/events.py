@@ -5,6 +5,7 @@ from app.core.auth import get_logged_user
 from fastapi_sso.sso.base import OpenID
 from app.core.umich_api import get_events_groups, get_events_items
 
+
 """ 
 <app/routers/events.py>
 
@@ -13,15 +14,17 @@ from app.core.umich_api import get_events_groups, get_events_items
 router = APIRouter()
 #Grab all events from the umflint API
 @router.get("/events/get/{items}")
-async def getEvents(items):
+async def get_events(items):
     
-    #get all group slugs first
+    #initialize arrays for gathering events from API
     all_events = []
+    unique_events = []
 
+    #get all group slugs first
     for slug in get_events_groups()['data']:
         
         #loop through each slug to get all events into an array
-        for event in get_events_items(slug['slug']):
+        for event in get_events_items(slug['slug'])['data']:
             events_json = {
                 'id' : event['id'],
                 'title' : event['title'],
@@ -30,11 +33,14 @@ async def getEvents(items):
                 'start_at' : event['start_at'],
                 'end_at' : event['end_at'],
                 'photo' : event['photo'],
-                'location' : event['location'],
+                'location_type' : event['location_type'],
                 'type' : event['type'],
             }
 
-            all_events.append(events_json)
+            #If there is an event with the same title, don't add
+            if(event['title'] not in unique_events):
+                all_events.append(events_json)
+                unique_events.append(event['title'])
     
     #sort array by unix Epoch
     all_events.sort(key = lambda start: start['start_at'], reverse=True)
@@ -44,3 +50,5 @@ async def getEvents(items):
         return all_events[:int(items)]
     else:
         return all_events
+
+#get_events(3)
