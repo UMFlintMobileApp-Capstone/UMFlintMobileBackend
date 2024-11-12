@@ -30,6 +30,7 @@ class Events(Base):
     start_at = Column(DateTime)
     end_at = Column(DateTime)
     group_name = Column(String)
+    url = Column(String)
 
 class Announcements(Base):
     __tablename__ = "Announcements"
