@@ -50,6 +50,6 @@ def getUserDetails(token: str):
             session.commit()
             return user
 
-    # this is assuming correct domain but for some reason invalid credentials
+    # this is assuming invalid credentials
     except ValueError:
         raise HTTPException(status_code=403, detail="Invalid credentials")
