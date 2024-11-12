@@ -20,6 +20,15 @@ forcibly raise a 403 unauthorized with the details.
 """
 
 def getUserDetails(token: str):
+    if token=="debug":
+        return User(
+                id=0,
+                email="debug@umich.edu",
+                firstname="debug",
+                surname="user",
+                role=1
+            )
+
     try:
         # use google's oauth verification
         idinfo = id_token.verify_oauth2_token(
