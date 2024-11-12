@@ -1,9 +1,6 @@
-from fastapi import APIRouter
-from app.core.umich_api import get_news_items
-from app.db.db import session
-from app.db.models import News
-from datetime import datetime
 
+from fastapi import APIRouter
+from app.core.data_process import get_news_items
 """ 
 <app/routers/news.py>
 
@@ -16,31 +13,6 @@ router = APIRouter()
 ## suggestion: maybe we only return maximum of 5-6 results period, umich returns 4 currently
 ## we can get the other 1-2 from our database (select top 2 desc)
 @router.get("/news/get/{items}")
-def items(items):
-    articles = []
+async def items(items):
+    return get_news_items(items)
 
-    for article in get_news_items():
-        articles.append(article)
-
-    for article in session.query(News).all():
-        articles.append(
-            {
-                'id': article.id,
-                'title': article.title,
-                'url': article.url,
-                'publication_date': article.publication_date,
-                'excerpt': article.excerpt,
-                'image_url': article.image_url,
-                'author': {
-                    'name': article.author_name,
-                    'email': article.author_email
-                }
-            }
-        )
-
-    articles.sort(key=lambda d: datetime.strptime(d['publication_date'], "%Y-%m-%d %H:%M:%S"), reverse=True)
-    
-    if(items.isnumeric()):
-        return articles[:int(items)]
-    else:
-        return articles
