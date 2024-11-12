@@ -1,10 +1,5 @@
-from fastapi import APIRouter,Depends
-from app.db.db import session
-from app.db.models import Todo
-from app.core.auth import get_logged_user
-from fastapi_sso.sso.base import OpenID
+from fastapi import APIRouter
 from app.core.umich_api import get_events_groups, get_events_items
-
 
 """ 
 <app/routers/events.py>

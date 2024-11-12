@@ -1,5 +1,5 @@
-from fastapi import APIRouter,Depends
-from fastapi_sso.sso.base import OpenID
+
+from fastapi import APIRouter
 from app.core.data_process import get_news_items
 """ 
 <app/routers/news.py>
