@@ -96,17 +96,25 @@ async def addStudentMeeting(title: str, notes: str, date: str, users: str, user:
 @router.post("/schedule/student/status")
 async def setStatusStudentMeeting(meeting: str, accept: bool, user: User = Depends(getUserDetails)):
     if accept:
-        meeting = session.query(Schedule).filter(Schedule.user==user.email).join(Scheduling, Scheduling.uuid==Schedule.uuid).first()
+        meeting = session.query(
+            Schedule, Scheduling
+        ).filter(
+            Schedule.user==user.email,
+            Scheduling.uuid==Schedule.uuid
+        ).first()
 
-        meeting.accepted = True
+        schedule = meeting[0]
+        scheduling = meeting[1]
+
+        schedule.accepted = True
 
         session.add(
             Threads(
-                uuid = meeting.threadUuid,
+                uuid = scheduling.threadUuid,
                 user = user.email
             )
         )
-        session.add(meeting)
+        session.add(schedule)
 
         session.commit()
         return {"status": "success", "message": "Accepted meeting!"}
