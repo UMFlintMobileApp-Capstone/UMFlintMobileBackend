@@ -1,6 +1,6 @@
-
 from fastapi import APIRouter
 from app.core.data_process import get_news_items
+
 """ 
 <app/routers/news.py>
 
@@ -15,4 +15,3 @@ router = APIRouter()
 @router.get("/news/get/{items}")
 async def items(items):
     return get_news_items(items)
-
