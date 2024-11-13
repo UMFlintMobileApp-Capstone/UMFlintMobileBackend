@@ -15,8 +15,27 @@ give the ability to see if a user is logged in and what their details are
 based on their JWT (as provided by Google).
 
 getUserDetails will create the user if they do not exist, otherwise it'll
-just return the user's details. On the case of an invalid JWT token it'll
-forcibly raise a 403 unauthorized with the details.
+just return the User model for the given user. On the case of an invalid 
+JWT token it'll raise a 403 unauthorized with the details.
+
+To require authentication you may use dependencies like so in the parameters:
+    user: User = Depends(getUserDetails)
+
+This will require a parameter called token in the request (preferably 
+via POST body or query parameters) that will be automatically processed
+without you having to add a token parameter.
+
+If however you want to optionally have authentication, access getUserDetails
+in function with a JWT parameter, such as using 'token' and use try/excepts
+to determine if login is successful, like:
+    try:
+        # logged in
+        user = getUserDetails(token)
+    except:
+        # not logged in
+
+In both cases you can then access the User model variable 'user' or whatever you
+choose later on.
 """
 
 def getUserDetails(token: str):
