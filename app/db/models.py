@@ -115,6 +115,7 @@ class Scheduling(Base):
     type = Column(String)
     title = Column(String)
     notes = Column(Text)
+    location = Column(String)
     threadUuid = Column(UUID, nullable=True)
     date = Column(DateTime)
     scheduler = Column(String)
@@ -125,5 +126,13 @@ class Schedule(Base):
     uuid = Column(UUID, primary_key=True)
     user = Column(String, primary_key=True)
     accepted = Column(Boolean, default=False)
+
+class Locations(Base):
+    __tablename__ = "Locations"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    building = Column(String, nullable=True)
+    address = Column(Text, nullable=True)
 
 Base.metadata.create_all(engine)

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from app.db.db import session
-from app.db.models import Schedule, Scheduling, User, Messages, Threads
+from app.db.models import Schedule, Scheduling, User, Locations, Threads
 from app.core.auth import getUserDetails
 from app.core.db_access import getUserByEmail
 from sqlalchemy import desc
@@ -35,12 +35,19 @@ async def getStudentMeetingSchedules(user: User = Depends(getUserDetails)):
         for u in session.query(Schedule).filter(Schedule.uuid==schedule.uuid).all():
             users.append({"user": getUserByEmail(u.user), "accepted": u.accepted}) 
 
+        location = session.query(Locations).filter(Locations.id==scheduling.location).first()
+
         # form dict and add to list
         meetings.append({
             "uuid": scheduling.uuid,
             "type": scheduling.type,
             "title": scheduling.title,
             "notes": scheduling.notes,
+            "location": {
+              "name": location.name,
+              "building": location.building,
+              "address": location.address  
+            },
             "date": scheduling.date,
             "scheduler": scheduling.scheduler,
             "threadUuid": scheduling.threadUuid,
@@ -52,7 +59,7 @@ async def getStudentMeetingSchedules(user: User = Depends(getUserDetails)):
     return {"meetings": meetings}
 
 @router.post("/schedule/student")
-async def addStudentMeeting(title: str, notes: str, date: str, users: str, user: User = Depends(getUserDetails)):
+async def addStudentMeeting(title: str, notes: str, date: str, location: int, users: str, user: User = Depends(getUserDetails)):
     tId = uuid.uuid4()
     mId = uuid.uuid4()
 
@@ -61,6 +68,8 @@ async def addStudentMeeting(title: str, notes: str, date: str, users: str, user:
             uuid = mId,
             type = "student",
             title = title,
+            notes = notes,
+            location = location,
             threadUuid = tId,
             date = date,
             scheduler = user.email
@@ -125,3 +134,7 @@ async def setStatusStudentMeeting(meeting: str, accept: bool, user: User = Depen
 
         session.commit()
         return {"status": "success", "message": "Declined meeting!"}
+
+@router.get("/schedule/locations")
+async def getSchedulingLocations(user: User = Depends(getUserDetails)):
+    return session.query(Locations).all()
