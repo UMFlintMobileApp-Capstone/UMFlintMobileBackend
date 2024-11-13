@@ -1,5 +1,5 @@
 from app.db.db import session
-from app.db.models import News, Announcements, Maps, BuildingHours
+from app.db.models import News, Announcements, Maps, BuildingHours, User
 import sys
 
 print(sys.path)
@@ -16,3 +16,9 @@ def get_maps():
 
 def get_hours():
     return session.query(BuildingHours).all()
+
+def getUserByEmail(email: str):
+    return session.query(User).filter(User.email==email).first()
+
+def getUserById(id: int):
+    return session.query(User).filter(User.id==id).first()
