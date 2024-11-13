@@ -1,13 +1,11 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
-from fastapi.responses import HTMLResponse
-from app.core.umich_api import get_announcement_items
 from app.db.db import session
 from app.db.models import Messages, Threads, User, Blocks
 from app.core.connectionmanager import ConnectionManager
 from app.core.auth import getUserDetails
 from sqlalchemy import desc, or_
 import uuid
-from app.core.data_process import get_announcement_items, getUserByEmail, getUserById
+from app.core.data_process import getAnnouncements, getUserByEmail
 
 """ 
 <app/routers/messaging.py>
@@ -26,8 +24,8 @@ manager = ConnectionManager()
 
 # retrieve announcements from db and api
 @router.get("/announcements/get/{items}")
-def getAnnouncements(items):
-    return get_announcement_items(items)
+def getAllAnnouncements(items, token="notloggedin"):
+    return getAnnouncements(items, token)
 
 # web socket for real time messaging (adds to db too!)
 @router.websocket("/messaging/ws/")

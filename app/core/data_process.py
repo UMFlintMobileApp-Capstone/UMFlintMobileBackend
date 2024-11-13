@@ -1,14 +1,25 @@
 from app.core.umich_api import *
 from app.core.db_access import *
 from datetime import datetime
+from app.core.auth import getUserDetails
 
 # this will return the combination of announcement items from the db and api
-def get_announcement_items(items):
+def getAnnouncements(items, token):
+    if(token!="notloggedin"):
+        try:
+            r = getUserDetails(token).role
+        except:
+            r = 1
+    else:
+        r = 1
+
     # create a list of all announcements
     allAnnouncements=[]
 
     # get announcements from api and iterate
     for announcement in get_announcement_items()['data']:
+        add = False
+
         # some clean up for getting the start date (some only have publish at)
         if announcement['display_start']!="":
             dateStart = announcement['display_start']
@@ -16,42 +27,44 @@ def get_announcement_items(items):
             dateStart = announcement['published_at']
 
         # get all the roles
-        roles = []
         for role in announcement['affiliations']:
-            roles.append({'role': getRoleId(role['name'])})
+            if getRoleId(role['name']) <= r:
+                add = True
 
-        # create a dictionary of an individual announcement
-        announcementJson = {
-                    'id': announcement['id'],
-                    'title': announcement['title'],
-                    'description':announcement['description'],
-                    'dateStart': dateStart,
-                    'dateEnd': announcement['display_end'],
-                    'roles': roles
-                }
+        if add:
+            # create a dictionary of an individual announcement
+            announcementJson = {
+                        'id': announcement['id'],
+                        'title': announcement['title'],
+                        'description':announcement['description'],
+                        'dateStart': dateStart,
+                        'dateEnd': announcement['display_end']
+                    }
 
-        # add the dictionary to the list
-        allAnnouncements.append(announcementJson)
+            # add the dictionary to the list
+            allAnnouncements.append(announcementJson)
 
         # get from the database, iterate for each
     for announcement in get_announcements():
+        add = False
+
         # get all the roles (and since it's comma seperated, iterate)
-        roles = []
         for role in announcement.role.split(","):
-            roles.append({'role': role})
+            if role <= r:
+                add = True
 
-        # create a dictionary of an individual announcement
-        announcementJson = {
-                    'id': announcement.id,
-                    'title': announcement.title,
-                    'description':announcement.description,
-                    'dateStart': announcement.dateStart,
-                    'dateEnd': announcement.dateEnd,
-                    'roles': roles
-                }
+        if add:
+            # create a dictionary of an individual announcement
+            announcementJson = {
+                        'id': announcement.id,
+                        'title': announcement.title,
+                        'description':announcement.description,
+                        'dateStart': announcement.dateStart,
+                        'dateEnd': announcement.dateEnd
+                    }
 
-        # add the dictionary to the list
-        allAnnouncements.append(announcementJson)
+            # add the dictionary to the list
+            allAnnouncements.append(announcementJson)
 
     # sort by newest start date
     allAnnouncements.sort(key=lambda d: datetime.strptime(d['dateStart'], "%Y-%m-%d %H:%M:%S"), reverse=True)
