@@ -1,8 +1,8 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
 from fastapi.responses import HTMLResponse
 from app.core.umich_api import get_announcement_items
 from app.db.db import session
-from app.db.models import Messages, Threads
+from app.db.models import Messages, Threads, User
 from app.core.connectionmanager import ConnectionManager
 from app.core.auth import getUserDetails
 from sqlalchemy import desc
@@ -33,12 +33,9 @@ def getAnnouncements(items):
 
 # web socket for real time messaging (adds to db too!)
 @router.websocket("/messaging/ws/")
-async def websocketEndpoint(websocket: WebSocket, token: str):
-    # login our user, only authenticated users can send messages
-    client_id = getUserDetails(token)
-
+async def websocketEndpoint(websocket: WebSocket, user: User = Depends(getUserDetails)):
     # connect to the websocket with the client's id
-    await manager.connect(websocket, client_id.id)
+    await manager.connect(websocket, user.id)
     try:
         # continuously watch for messages while socket is open
         while True:
@@ -73,7 +70,7 @@ async def websocketEndpoint(websocket: WebSocket, token: str):
                 session.add(
                     Threads(
                         uuid = tId,
-                        user = client_id.id
+                        user = user.id
                     )
                 )
 
@@ -93,7 +90,7 @@ async def websocketEndpoint(websocket: WebSocket, token: str):
             # create and add to session the message, link to the thread
             session.add(
                 Messages(
-                    user=client_id.id,
+                    user=user.id,
                     messageUuid=uuid.uuid4(),
                     chatUuid=tId,
                     message=data['text'],
@@ -118,10 +115,7 @@ async def websocketEndpoint(websocket: WebSocket, token: str):
 
 # get all threads for the current user, the users involved, and the most recent message
 @router.get("/messages/")
-async def getThreads(token: str):
-    # login our user
-    user = getUserDetails(token)
-
+async def getThreads(user: User = Depends(getUserDetails)):
     threads = []
 
     # get all threads for the current user
@@ -181,10 +175,7 @@ async def getMessages(token: str, id: str):
 
 # add a user to a given thread
 @router.post("/messages/user")
-async def addUserToThread(token: str, user: int, threadUuid: str):
-    # login our user
-    user = getUserDetails(token)
-
+async def addUserToThread(newUser: int, threadUuid: str, user: User = Depends(getUserDetails)):
     # get the thread if the user is a part of it
     thread = session.query(Threads).filter(Threads.user==user.id, Threads.uuid==threadUuid)
 
@@ -194,48 +185,42 @@ async def addUserToThread(token: str, user: int, threadUuid: str):
         session.add(
             Threads(
                 uuid = threadUuid,
-                user = user
+                user = newUser
             )
         )
         session.commit()
 
-        return {"status": "success", "message": "Sucessfully added user '"+str(id)+"' to thread '"+threadUuid+"'!"}
+        return {"status": "success", "message": "Sucessfully added user '"+str(newUser)+"' to thread '"+threadUuid+"'!"}
     else:
         return {"status": "failure", "message": "Couldn't modify '"+threadUuid+"' because either you do not own it, or it doesn't exist."}
 
 # delete a user from a given thread
 @router.delete("/message/user/{id}")
-async def removeUserFromThread(token: str, id: int, threadUuid: str):
-    # login our user
-    user = getUserDetails(token)
-
+async def removeUserFromThread(deleteUser: int, threadUuid: str, user: User = Depends(getUserDetails)):
     # get the thread if the user is a part of it
     thread = session.query(Threads).filter(Threads.user==user.id, Threads.uuid==threadUuid)
 
     # if there's any threads
     if thread.count() > 0:
         # get the thread if the deletee is a part of it
-        toBeDeletedUser = session.query(Threads).filter(Threads.user==id, Threads.uuid==threadUuid)
+        toBeDeletedUser = session.query(Threads).filter(Threads.user==deleteUser, Threads.uuid==threadUuid)
 
         # delete the user if they are a part of the thread
         if toBeDeletedUser.one_or_none != None:
             session.delete(
                 Threads(
                     uuid = threadUuid,
-                    user = user
+                    user = deleteUser
                 )
             )
             session.commit()
-            return {"status": "success", "message": "Sucessfully deleted user '"+str(id)+"' from thread '"+threadUuid+"'!"}
+            return {"status": "success", "message": "Sucessfully deleted user '"+str(deleteUser)+"' from thread '"+threadUuid+"'!"}
         
     return {"status": "failure", "message": "Couldn't modify '"+threadUuid+"' because either you do not own it, or it doesn't exist."}
 
 # delete a message for everyone given it's uuid
 @router.delete("/messages/message/{id}")
-async def deleteMessage(token: str, id: str):
-    # login our user
-    user = getUserDetails(token)
-
+async def deleteMessage(id: str, user: User = Depends(getUserDetails)):
     # get the given message specifically that the user sent themselves
     message = session.query(Messages).filter(Messages.user==user.id, Messages.messageUuid==id)
 
@@ -251,10 +236,7 @@ async def deleteMessage(token: str, id: str):
 
 # delete a thread for a given user given the thread uuid
 @router.delete("/messages/thread/{id}")
-async def deleteThread(token: str, id: str):
-    # login our user
-    user = getUserDetails(token)
-
+async def deleteThread(id: str, user: User = Depends(getUserDetails)):
     # get the given thread specifically that the user has access to
     thread = session.query(Threads).filter(Threads.user==user.id, Threads.uuid==id)
 
@@ -274,7 +256,7 @@ async def deleteThread(token: str, id: str):
     return {"status": "failure", "message": "Couldn't delete '"+id+"' because either you do not own it, or it doesn't exist."}
 
 @router.get("/messages/test")
-def a():
+def a(user: User = Depends(getUserDetails)):
     return HTMLResponse("""
 <!DOCTYPE html>
 <html>
@@ -292,7 +274,7 @@ def a():
         <ul id='messages'>
         </ul>
         <script>
-            var client_id = "debug"
+            var client_id = """+user.id+"""
             document.querySelector("#ws-id").textContent = client_id;
             var ws = new WebSocket(`ws://localhost:8000/messaging/ws/?token=`+client_id);
             ws.onmessage = function(event) {
