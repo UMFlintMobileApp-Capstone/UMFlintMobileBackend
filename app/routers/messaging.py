@@ -118,7 +118,7 @@ async def websocketEndpoint(websocket: WebSocket, token: str):
 
 # get all threads for the current user, the users involved, and the most recent message
 @router.get("/messages/")
-async def getChats(token: str):
+async def getThreads(token: str):
     # login our user
     user = getUserDetails(token)
 
@@ -154,11 +154,11 @@ async def getChats(token: str):
         )
     
     # return all threads
-    return {'threads': threads}
+    return {"threads": threads}
 
 # get a thread's messages given it's uuid
 @router.get("/messages/chat/{id}")
-async def getChatMessages(token: str, id: str):
+async def getMessages(token: str, id: str):
     # login our user
     user = getUserDetails(token)
 
@@ -177,8 +177,59 @@ async def getChatMessages(token: str, id: str):
             })
 
         # return all messages
-        return messages
-    
+        return {"messages": messages}
+
+# add a user to a given thread
+@router.post("/messages/user")
+async def addUserToThread(token: str, user: int, threadUuid: str):
+    # login our user
+    user = getUserDetails(token)
+
+    # get the thread if the user is a part of it
+    thread = session.query(Threads).filter(Threads.user==user.id, Threads.uuid==threadUuid)
+
+    # if there's any threads
+    if thread.count() > 0:
+        # add the requested user
+        session.add(
+            Threads(
+                uuid = threadUuid,
+                user = user
+            )
+        )
+        session.commit()
+
+        return {"status": "success", "message": "Sucessfully added user '"+str(id)+"' to thread '"+threadUuid+"'!"}
+    else:
+        return {"status": "failure", "message": "Couldn't modify '"+threadUuid+"' because either you do not own it, or it doesn't exist."}
+
+# delete a user from a given thread
+@router.delete("/message/user/{id}")
+async def removeUserFromThread(token: str, id: int, threadUuid: str):
+    # login our user
+    user = getUserDetails(token)
+
+    # get the thread if the user is a part of it
+    thread = session.query(Threads).filter(Threads.user==user.id, Threads.uuid==threadUuid)
+
+    # if there's any threads
+    if thread.count() > 0:
+        # get the thread if the deletee is a part of it
+        toBeDeletedUser = session.query(Threads).filter(Threads.user==id, Threads.uuid==threadUuid)
+
+        # delete the user if they are a part of the thread
+        if toBeDeletedUser.one_or_none != None:
+            session.delete(
+                Threads(
+                    uuid = threadUuid,
+                    user = user
+                )
+            )
+            session.commit()
+            return {"status": "success", "message": "Sucessfully deleted user '"+str(id)+"' from thread '"+threadUuid+"'!"}
+        
+    return {"status": "failure", "message": "Couldn't modify '"+threadUuid+"' because either you do not own it, or it doesn't exist."}
+
 # delete a message for everyone given it's uuid
 @router.delete("/messages/message/{id}")
 async def deleteMessage(token: str, id: str):
@@ -196,7 +247,7 @@ async def deleteMessage(token: str, id: str):
         return {"status": "success", "message": "Sucessfully deleted message '"+id+"'!"}
     # otherwise they don't have the correct permissions, or the message doesn't exist
     else:
-        return {"status": "failure", "message": "Couldn't delete '"+id+" because either you do not own it, or it doesn't exist."}
+        return {"status": "failure", "message": "Couldn't delete '"+id+"' because either you do not own it, or it doesn't exist."}
 
 # delete a thread for a given user given the thread uuid
 @router.delete("/messages/thread/{id}")
@@ -219,8 +270,8 @@ async def deleteThread(token: str, id: str):
         session.commit()
 
         return {"status": "success", "message": "Sucessfully deleted thread '"+id+"'!"}
-    else:
-        return {"status": "failure", "message": "Couldn't delete '"+id+" because either you do not own it, or it doesn't exist."}
+    
+    return {"status": "failure", "message": "Couldn't delete '"+id+"' because either you do not own it, or it doesn't exist."}
 
 @router.get("/messages/test")
 def a():
