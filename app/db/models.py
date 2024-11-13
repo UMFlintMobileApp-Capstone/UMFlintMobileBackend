@@ -90,7 +90,7 @@ class Messages(Base):
     __tablename__ = "Messages"
 
     id = Column(Integer, primary_key=True)
-    user = Column(Integer)
+    user = Column(String)
     messageUuid = Column(UUID)
     chatUuid = Column(UUID)
     message = Column(Text)
@@ -100,6 +100,12 @@ class Threads(Base):
     __tablename__ = "Threads"
 
     uuid = Column(UUID, primary_key=True)
-    user = Column(Integer, primary_key=True)
+    user = Column(String, primary_key=True)
+
+class Blocks(Base):
+    __tablename__ = "Blocks"
+
+    initiator = Column(String, primary_key=True)
+    blockee = Column(String, primary_key=True)
 
 Base.metadata.create_all(engine)

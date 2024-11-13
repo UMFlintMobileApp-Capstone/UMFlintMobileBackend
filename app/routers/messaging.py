@@ -2,13 +2,12 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
 from fastapi.responses import HTMLResponse
 from app.core.umich_api import get_announcement_items
 from app.db.db import session
-from app.db.models import Messages, Threads, User
+from app.db.models import Messages, Threads, User, Blocks
 from app.core.connectionmanager import ConnectionManager
 from app.core.auth import getUserDetails
-from sqlalchemy import desc
+from sqlalchemy import desc, or_
 import uuid
-from fastapi import APIRouter
-from app.core.data_process import get_announcement_items
+from app.core.data_process import get_announcement_items, getUserByEmail, getUserById
 
 """ 
 <app/routers/messaging.py>
@@ -19,7 +18,6 @@ It handles getting and setting system wide announcements.
 
 It also handles the messaging functionality, both real-time
 and historical.
-
 """
 
 # create the router
@@ -35,7 +33,7 @@ def getAnnouncements(items):
 @router.websocket("/messaging/ws/")
 async def websocketEndpoint(websocket: WebSocket, user: User = Depends(getUserDetails)):
     # connect to the websocket with the client's id
-    await manager.connect(websocket, user.id)
+    await manager.connect(websocket, user.email)
     try:
         # continuously watch for messages while socket is open
         while True:
@@ -70,7 +68,7 @@ async def websocketEndpoint(websocket: WebSocket, user: User = Depends(getUserDe
                 session.add(
                     Threads(
                         uuid = tId,
-                        user = user.id
+                        user = user.email
                     )
                 )
 
@@ -90,7 +88,7 @@ async def websocketEndpoint(websocket: WebSocket, user: User = Depends(getUserDe
             # create and add to session the message, link to the thread
             session.add(
                 Messages(
-                    user=user.id,
+                    user=user.email,
                     messageUuid=uuid.uuid4(),
                     chatUuid=tId,
                     message=data['text'],
@@ -119,12 +117,12 @@ async def getThreads(user: User = Depends(getUserDetails)):
     threads = []
 
     # get all threads for the current user
-    for thread in session.query(Threads).filter(Threads.user==user.id).all():
+    for thread in session.query(Threads).filter(Threads.user==user.email).all():
         users = []
 
         # get all users for a given thread
         for u in session.query(Threads).filter(Threads.uuid==thread.uuid).all():
-            users.append({"id": u.user})
+            users.append({"user": getUserByEmail(u.user)})
         
         # get the most recent message
         lastMessage = session.query(Messages).filter(
@@ -142,7 +140,7 @@ async def getThreads(user: User = Depends(getUserDetails)):
                 "messageUuid": lastMessage.messageUuid,
                 "message": lastMessage.message,
                 "sendDate": lastMessage.sendDate,
-                "sender": lastMessage.user
+                "sender": getUserByEmail(lastMessage.user)
                 }
             }
         )
@@ -157,7 +155,7 @@ async def getMessages(token: str, id: str):
     user = getUserDetails(token)
 
     # if the thread exists and the user has access to it
-    if session.query(Threads).filter(Threads.uuid==id, Threads.user==user.id).count() != 0:
+    if session.query(Threads).filter(Threads.uuid==id, Threads.user==user.email).count() != 0:
         messages = []
 
         # get all messages in thread and add to a list of dicts
@@ -167,7 +165,7 @@ async def getMessages(token: str, id: str):
                 "threadUuid": message.chatUuid,
                 "message": message.message,
                 "sendDate": message.sendDate,
-                "sender": message.user
+                "sender": getUserByEmail(message.user)
             })
 
         # return all messages
@@ -175,9 +173,9 @@ async def getMessages(token: str, id: str):
 
 # add a user to a given thread
 @router.post("/messages/user")
-async def addUserToThread(newUser: int, threadUuid: str, user: User = Depends(getUserDetails)):
+async def addUserToThread(newUser: str, threadUuid: str, user: User = Depends(getUserDetails)):
     # get the thread if the user is a part of it
-    thread = session.query(Threads).filter(Threads.user==user.id, Threads.uuid==threadUuid)
+    thread = session.query(Threads).filter(Threads.user==user.email, Threads.uuid==threadUuid)
 
     # if there's any threads
     if thread.count() > 0:
@@ -190,15 +188,15 @@ async def addUserToThread(newUser: int, threadUuid: str, user: User = Depends(ge
         )
         session.commit()
 
-        return {"status": "success", "message": "Sucessfully added user '"+str(newUser)+"' to thread '"+threadUuid+"'!"}
+        return {"status": "success", "message": "Sucessfully added user '"+newUser+"' to thread '"+threadUuid+"'!"}
     else:
         return {"status": "failure", "message": "Couldn't modify '"+threadUuid+"' because either you do not own it, or it doesn't exist."}
 
 # delete a user from a given thread
 @router.delete("/message/user/{id}")
-async def removeUserFromThread(deleteUser: int, threadUuid: str, user: User = Depends(getUserDetails)):
+async def removeUserFromThread(deleteUser: str, threadUuid: str, user: User = Depends(getUserDetails)):
     # get the thread if the user is a part of it
-    thread = session.query(Threads).filter(Threads.user==user.id, Threads.uuid==threadUuid)
+    thread = session.query(Threads).filter(Threads.user==user.email, Threads.uuid==threadUuid)
 
     # if there's any threads
     if thread.count() > 0:
@@ -214,15 +212,58 @@ async def removeUserFromThread(deleteUser: int, threadUuid: str, user: User = De
                 )
             )
             session.commit()
-            return {"status": "success", "message": "Sucessfully deleted user '"+str(deleteUser)+"' from thread '"+threadUuid+"'!"}
+            return {"status": "success", "message": "Sucessfully deleted user '"+deleteUser+"' from thread '"+threadUuid+"'!"}
         
     return {"status": "failure", "message": "Couldn't modify '"+threadUuid+"' because either you do not own it, or it doesn't exist."}
+
+# block user
+@router.post("/message/block/{blockUser}")
+async def blockUser(blockUser: str, user: User = Depends(getUserDetails)):
+    # check to make sure user isn't already blocked from either side
+    if session.query(Blocks).filter(
+            or_(
+                (Blocks.blockee==blockUser, Blocks.initiator==user.email),
+                (Blocks.blockee==user.email, Blocks.initiator==blockUser)
+            )).one_or_none == None:
+        
+        # if they aren't, block them
+        session.add(
+            Blocks(
+                initiator = user.email,
+                blockee = blockUser
+            )
+        )
+
+        session.commit()
+        return {"status": "success", "message": "Sucessfully blocked user '"+blockUser+"!"}
+    
+    return {"status": "failure", "message": "Couldn't block '"+blockUser+"' because they are blocked already."}
+
+# unblock user only if the unblocker is the original blocker
+@router.post("/message/unblock/{blockUser}")
+async def unBlockUser(blockUser: str, user: User = Depends(getUserDetails)):
+    user = session.query(Blocks).filter(
+        Blocks.blockee==blockUser, Blocks.initiator==user.email
+    )
+
+    if user.one_or_none != None:
+        session.delete(
+            Blocks(
+                initiator = user.email,
+                blockee = blockUser
+            )
+        )
+
+        session.commit()
+        return {"status": "success", "message": "Sucessfully unblocked user '"+blockUser+"!"}
+    
+    return {"status": "failure", "message": "Couldn't block '"+blockUser+"' because either you do not have the permission, or they don't exist."}
 
 # delete a message for everyone given it's uuid
 @router.delete("/messages/message/{id}")
 async def deleteMessage(id: str, user: User = Depends(getUserDetails)):
     # get the given message specifically that the user sent themselves
-    message = session.query(Messages).filter(Messages.user==user.id, Messages.messageUuid==id)
+    message = session.query(Messages).filter(Messages.user==user.email, Messages.messageUuid==id)
 
     # if they have sent the message
     if message.one_or_none != None:
@@ -238,7 +279,7 @@ async def deleteMessage(id: str, user: User = Depends(getUserDetails)):
 @router.delete("/messages/thread/{id}")
 async def deleteThread(id: str, user: User = Depends(getUserDetails)):
     # get the given thread specifically that the user has access to
-    thread = session.query(Threads).filter(Threads.user==user.id, Threads.uuid==id)
+    thread = session.query(Threads).filter(Threads.user==user.email, Threads.uuid==id)
 
     # if there's still a thread
     if thread.count() > 0:
