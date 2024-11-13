@@ -13,6 +13,13 @@ from app.core.data_process import get_announcement_items
 """ 
 <app/routers/messaging.py>
 
+This is the announcements and messaging route. 
+
+It handles getting and setting system wide announcements.
+
+It also handles the messaging functionality, both real-time
+and historical.
+
 """
 
 # create the router
@@ -21,12 +28,12 @@ manager = ConnectionManager()
 
 # retrieve announcements from db and api
 @router.get("/announcements/get/{items}")
-def getMessages(items):
+def getAnnouncements(items):
     return get_announcement_items(items)
 
 # web socket for real time messaging (adds to db too!)
 @router.websocket("/messaging/ws/")
-async def websocket_endpoint(websocket: WebSocket, token: str):
+async def websocketEndpoint(websocket: WebSocket, token: str):
     # login our user, only authenticated users can send messages
     client_id = getUserDetails(token)
 
