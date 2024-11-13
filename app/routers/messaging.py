@@ -121,7 +121,7 @@ async def getChats(token: str):
 
     return {'threads': threads}
 
-@router.get("/messages/chat")
+@router.get("/messages/chat/{id}")
 async def getChatMessages(token: str, id: str):
     user = getUserDetails(token)
 
@@ -138,6 +138,35 @@ async def getChatMessages(token: str, id: str):
             })
 
         return messages
+    
+@router.delete("/messages/message/{id}")
+async def deleteMessage(token: str, id: str):
+    user = getUserDetails(token)
+    message = session.query(Messages).filter(Messages.user==user.id, Messages.messageUuid==id)
+
+    if message.one_or_none != None:
+        session.delete(message)
+        session.commit()
+        return {"status": "success", "message": "Sucessfully deleted message '"+id+"'!"}
+    else:
+        return {"status": "failure", "message": "Couldn't delete '"+id+" because either you do not own it, or it doesn't exist."}
+    
+@router.delete("/messages/thread/{id}")
+async def deleteThread(token: str, id: str):
+    user = getUserDetails(token)
+    thread = session.query(Threads).filter(Threads.user==user.id, Threads.uuid==id)
+
+    if thread.count() > 0:
+        if thread.count() == 1:
+            messages = session.query(Messages).filter(Messages.chatUuid==id)
+            session.delete(messages)
+
+        session.delete(thread)
+
+        session.commit()
+        return {"status": "success", "message": "Sucessfully deleted thread '"+id+"'!"}
+    else:
+        return {"status": "failure", "message": "Couldn't delete '"+id+" because either you do not own it, or it doesn't exist."}
 
 @router.get("/messages/test")
 def a():
@@ -184,7 +213,7 @@ def a():
             function sendMessage(event) {
                 const msg = {
                     type: "message",
-                    to: [document.getElementById('to').value,2],
+                    to: [document.getElementById('to').value],
                     text: document.getElementById('messageText').value,
                     id: client_id,
                     date: new Date(Date.now()).toLocaleString(),
