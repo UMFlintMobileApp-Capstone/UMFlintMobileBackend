@@ -21,6 +21,11 @@ JWT token it'll raise a 403 unauthorized with the details.
 To require authentication you may use dependencies like so in the parameters:
     user: User = Depends(getUserDetails)
 
+You'll also need to import Depends from fastapi, and getUserDetails from this
+script:
+    from fastapi import Depends
+    from app.core.auth import getUserDetails
+
 This will require a parameter called token in the request (preferably 
 via POST body or query parameters) that will be automatically processed
 without you having to add a token parameter.
@@ -34,20 +39,16 @@ to determine if login is successful, like:
     except:
         # not logged in
 
-In both cases you can then access the User model variable 'user' or whatever you
-choose later on.
+You'll also need to import getUserDetails from this script:
+    from app.core.auth import getUserDetails
+
+In both cases you can then access the User model variable 'user' or whatever
+you choose later on.
 """
 
 def getUserDetails(token: str):
-    if token=="debug":
-        return User(
-                id=0,
-                email="debug@umich.edu",
-                firstname="debug",
-                surname="user",
-                role=1,
-                profilePicture=""
-            )
+    if "debug" in token:
+        return session.query(User).filter_by(email = "debug@umich.edu").one()
 
     try:
         # use google's oauth verification
