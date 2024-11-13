@@ -1,6 +1,6 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
 from app.db.db import session
-from app.db.models import Messages, Threads, User, Blocks
+from app.db.models import Messages, Threads, User, Blocks, Announcements
 from app.core.connectionmanager import ConnectionManager
 from app.core.auth import getUserDetails
 from sqlalchemy import desc, or_
@@ -23,9 +23,26 @@ router = APIRouter()
 manager = ConnectionManager()
 
 # retrieve announcements from db and api
-@router.get("/announcements/get/{items}")
+@router.get("/announcements/{items}")
 def getAllAnnouncements(items, token="notloggedin"):
     return getAnnouncements(items, token)
+
+@router.post("/announcements")
+async def addAnnouncement(title: str, description: str, dateStart: str, dateEnd: str, role: int, user: User = Depends(getUserDetails)):
+    if user.role >= 2:
+        session.add(
+            Announcements(
+                title = title,
+                description = description,
+                dateStart = dateStart,
+                dateEnd = dateEnd,
+                role = role
+            )
+        )
+        session.commit()
+        return {"status": "success", "message": "Sucessfully sent new announcement '"+title+"!"}
+    else:
+        return {"status": "failure", "message": "You don't have permission to send announcements."}
 
 # web socket for real time messaging (adds to db too!)
 @router.websocket("/messaging/ws/")
