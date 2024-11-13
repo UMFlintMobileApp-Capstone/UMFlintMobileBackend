@@ -130,18 +130,22 @@ async def getThreads(user: User = Depends(getUserDetails)):
             ).order_by(
                 desc(Messages.sendDate)
             ).first()
+        
+        if lastMessage != None:
+            message = {
+                "messageUuid": lastMessage.messageUuid,
+                "message": lastMessage.message,
+                "sendDate": lastMessage.sendDate,
+                "sender": getUserByEmail(lastMessage.user)
+            }
+        else:
+            message = None
 
         # form dict and add to list
         threads.append({
             "uuid": thread.uuid,
             "users": users,
-            "last_message": 
-                {
-                "messageUuid": lastMessage.messageUuid,
-                "message": lastMessage.message,
-                "sendDate": lastMessage.sendDate,
-                "sender": getUserByEmail(lastMessage.user)
-                }
+            "last_message": message
             }
         )
     
@@ -276,7 +280,7 @@ async def deleteMessage(id: str, user: User = Depends(getUserDetails)):
         return {"status": "failure", "message": "Couldn't delete '"+id+"' because either you do not own it, or it doesn't exist."}
 
 # delete a thread for a given user given the thread uuid
-@router.delete("/messages/thread/{id}")
+@router.delete("/messages/chat/{id}")
 async def deleteThread(id: str, user: User = Depends(getUserDetails)):
     # get the given thread specifically that the user has access to
     thread = session.query(Threads).filter(Threads.user==user.email, Threads.uuid==id)
