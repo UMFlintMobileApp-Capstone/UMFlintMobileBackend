@@ -108,4 +108,22 @@ class Blocks(Base):
     initiator = Column(String, primary_key=True)
     blockee = Column(String, primary_key=True)
 
+class Scheduling(Base):
+    __tablename__ = "Scheduling"
+
+    uuid = Column(UUID, primary_key=True)
+    type = Column(String)
+    title = Column(String)
+    notes = Column(Text)
+    threadUuid = Column(UUID, nullable=True)
+    date = Column(DateTime)
+    scheduler = Column(String)
+
+class Schedule(Base):
+    __tablename__ = "Schedule"
+
+    uuid = Column(UUID, primary_key=True)
+    user = Column(String, primary_key=True)
+    accepted = Column(Boolean, default=False)
+
 Base.metadata.create_all(engine)
