@@ -1,5 +1,5 @@
 from app.db.db import session
-from app.db.models import News, Announcements, Maps, BuildingHours, User
+from app.db.models import News, Announcements, Maps, BuildingHours, User, Blocks
 import sys
 
 print(sys.path)
@@ -22,3 +22,6 @@ def getUserByEmail(email: str):
 
 def getUserById(id: int):
     return session.query(User).filter(User.id==id).first()
+
+def getUsers():
+    return session.query(User).first()

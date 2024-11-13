@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from app.db.models import User
 from app.core.auth import getUserDetails
 from fastapi import APIRouter
-from app.core.db_access import getUserByEmail, getUserById
+from app.core.db_access import getUserByEmail, getUserById, getUsers
 
 """ 
 <app/routers/user.py>
@@ -13,9 +13,13 @@ from app.core.db_access import getUserByEmail, getUserById
 router = APIRouter()
 
 @router.get("/user/byId/{id}")
-def getUserById(id: int, user: User = Depends(getUserDetails)):
+def getUserId(id: int, user: User = Depends(getUserDetails)):
     return getUserById(id)
 
 @router.get("/user/byEmail/{email}")
-def getUserByEmail(email: str, user: User = Depends(getUserDetails)):
+def getUserEmail(email: str, user: User = Depends(getUserDetails)):
     return getUserByEmail(email)
+
+@router.get("/users")
+def getUser(user: User = Depends(getUserDetails)):
+    return getUsers()
