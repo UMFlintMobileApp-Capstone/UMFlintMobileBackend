@@ -65,6 +65,7 @@ class User(Base):
     firstname = Column(String)
     surname = Column(String)
     role = Column(Integer)
+    profilePicture = Column(String)
 
 
 class Role(Base):

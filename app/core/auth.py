@@ -26,7 +26,8 @@ def getUserDetails(token: str):
                 email="debug@umich.edu",
                 firstname="debug",
                 surname="user",
-                role=1
+                role=1,
+                profilePicture=""
             )
 
     try:
@@ -53,7 +54,8 @@ def getUserDetails(token: str):
                 email=idinfo['email'],
                 firstname=idinfo['given_name'],
                 surname=idinfo['family_name'],
-                role=1
+                role=1,
+                profilePicture=idinfo['picture']
             )
             session.add(user)
             session.commit()
