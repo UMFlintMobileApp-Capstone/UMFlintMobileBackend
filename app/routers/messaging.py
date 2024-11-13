@@ -24,15 +24,21 @@ manager = ConnectionManager()
 def getMessages(items):
     return get_announcement_items(items)
 
-@router.websocket("/ws/")
+# web socket for real time messaging (adds to db too!)
+@router.websocket("/messaging/ws/")
 async def websocket_endpoint(websocket: WebSocket, token: str):
+    # login our user, only authenticated users can send messages
     client_id = getUserDetails(token)
 
+    # connect to the websocket with the client's id
     await manager.connect(websocket, client_id.id)
     try:
+        # continuously watch for messages while socket is open
         while True:
+            # get the json message the client sent
             data = await websocket.receive_json()
 
+            # formulate the response message
             message = {
                 'type': 'personal',
                 'text': data['text'],
@@ -41,16 +47,22 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                 'date': data['date']
             }
 
+            # do we want to create a thread? default is no
             createThread = False
 
+            # for every recipient
             for x in data['to']:
+                # if there's no active thread with this recipent, then we need to create a new one
                 if session.query(Threads.uuid).filter(Threads.user==x).count() == 0:
                     createThread = True
                     break
-
+            
+            # when we need to create a thread
             if createThread:
+                # generate the thread uuid
                 tId = uuid.uuid4()
 
+                # create and add to session the new thread for the sender
                 session.add(
                     Threads(
                         uuid = tId,
@@ -58,16 +70,20 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                     )
                 )
 
+                # for each recipient
                 for x in data['to']:
+                    # create and add to session new thread for the recipient
                     session.add(
                         Threads(
                             uuid = tId,
                             user = x
                         )
                     )
+            # if we don't need to create a thread, we do need the existing thread uuid        
             else:
                 tId = session.query(Threads.uuid).filter(Threads.user==x).first().uuid
 
+            # create and add to session the message, link to the thread
             session.add(
                 Messages(
                     user=client_id.id,
@@ -78,34 +94,45 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                 )
             )         
 
+            # send to database
             session.commit()
 
+            # send a personal message to the sender saying we got it (we don't have to show this, but it's good to get an ack)
             await manager.pm(message, websocket)
 
+            # change the message type to a direct message
             message['type']='dm'
 
+            # and send the message to any active client that should get it
             await manager.dm(message)
     except WebSocketDisconnect:
+        # disconnect the socket when a user leaves, we can also send a message to other users if we wanted
         manager.disconnect(websocket)
 
+# get all threads for the current user, the users involved, and the most recent message
 @router.get("/messages/")
 async def getChats(token: str):
+    # login our user
     user = getUserDetails(token)
 
     threads = []
 
+    # get all threads for the current user
     for thread in session.query(Threads).filter(Threads.user==user.id).all():
         users = []
 
+        # get all users for a given thread
         for u in session.query(Threads).filter(Threads.uuid==thread.uuid).all():
             users.append({"id": u.user})
-
+        
+        # get the most recent message
         lastMessage = session.query(Messages).filter(
                 Messages.chatUuid==thread.uuid
             ).order_by(
                 desc(Messages.sendDate)
             ).first()
 
+        # form dict and add to list
         threads.append({
             "uuid": thread.uuid,
             "users": users,
@@ -118,16 +145,21 @@ async def getChats(token: str):
                 }
             }
         )
-
+    
+    # return all threads
     return {'threads': threads}
 
+# get a thread's messages given it's uuid
 @router.get("/messages/chat/{id}")
 async def getChatMessages(token: str, id: str):
+    # login our user
     user = getUserDetails(token)
 
+    # if the thread exists and the user has access to it
     if session.query(Threads).filter(Threads.uuid==id, Threads.user==user.id).count() != 0:
         messages = []
 
+        # get all messages in thread and add to a list of dicts
         for message in session.query(Messages).filter(Messages.chatUuid==id).all():
             messages.append({
                 "messageUuid": message.messageUuid,
@@ -137,33 +169,48 @@ async def getChatMessages(token: str, id: str):
                 "sender": message.user
             })
 
+        # return all messages
         return messages
     
+# delete a message for everyone given it's uuid
 @router.delete("/messages/message/{id}")
 async def deleteMessage(token: str, id: str):
+    # login our user
     user = getUserDetails(token)
+
+    # get the given message specifically that the user sent themselves
     message = session.query(Messages).filter(Messages.user==user.id, Messages.messageUuid==id)
 
+    # if they have sent the message
     if message.one_or_none != None:
+        # delete it
         session.delete(message)
         session.commit()
         return {"status": "success", "message": "Sucessfully deleted message '"+id+"'!"}
+    # otherwise they don't have the correct permissions, or the message doesn't exist
     else:
         return {"status": "failure", "message": "Couldn't delete '"+id+" because either you do not own it, or it doesn't exist."}
-    
+
+# delete a thread for a given user given the thread uuid
 @router.delete("/messages/thread/{id}")
 async def deleteThread(token: str, id: str):
+    # login our user
     user = getUserDetails(token)
+
+    # get the given thread specifically that the user has access to
     thread = session.query(Threads).filter(Threads.user==user.id, Threads.uuid==id)
 
+    # if there's still a thread
     if thread.count() > 0:
+        # if there's only the current user, then we can just delete all the messages
         if thread.count() == 1:
             messages = session.query(Messages).filter(Messages.chatUuid==id)
             session.delete(messages)
 
+        # delete the thread
         session.delete(thread)
-
         session.commit()
+
         return {"status": "success", "message": "Sucessfully deleted thread '"+id+"'!"}
     else:
         return {"status": "failure", "message": "Couldn't delete '"+id+" because either you do not own it, or it doesn't exist."}
@@ -189,7 +236,7 @@ def a():
         <script>
             var client_id = "debug"
             document.querySelector("#ws-id").textContent = client_id;
-            var ws = new WebSocket(`ws://localhost:8000/ws/?token=`+client_id);
+            var ws = new WebSocket(`ws://localhost:8000/messaging/ws/?token=`+client_id);
             ws.onmessage = function(event) {
                 data = JSON.parse(event.data)
                 console.log(data);
