@@ -120,6 +120,15 @@ class Scheduling(Base):
     date = Column(DateTime)
     scheduler = Column(String)
 
+#Both the degree and advisor name are primary keys in the case of multiple advisors for the same degree
+class Advisors(Base):
+    __tablename__ = "Advisors"
+
+    college = Column(String)
+    degree = Column(String, primary_key = True)
+    adv_name = Column(String, primary_key = True)
+    adv_email = Column(String)
+
 class Schedule(Base):
     __tablename__ = "Schedule"
 
