@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from app.db.db import session
-from app.db.models import Schedule, Scheduling, User, Locations, Threads
+from app.db.models import Schedule, Scheduling, User, Locations, Threads, Advisors, Degrees, Colleges, AdvisorLinks
 from app.core.auth import getUserDetails
 from app.core.db_access import getUserByEmail
 from sqlalchemy import desc
@@ -138,3 +138,15 @@ async def setStatusStudentMeeting(meeting: str, accept: bool, user: User = Depen
 @router.get("/schedule/locations")
 async def getSchedulingLocations(user: User = Depends(getUserDetails)):
     return session.query(Locations).all()
+
+@router.get("/schedule/colleges")
+async def getSchedulingColleges(user: User = Depends(getUserDetails)):
+    return session.query(Colleges).all()
+
+@router.get("/schedule/degrees/college/{college}")
+async def getSchedulingDegrees(college: int, user: User = Depends(getUserDetails)):
+    return session.query(Degrees).filter(Degrees.collegeId==college).all()
+
+@router.get("/schedule/advisors/college/{college}/degree/{degree}")
+async def getSchedulingAdvisors(college: int, degree: int, user: User = Depends(getUserDetails)):
+    return session.query(Advisors).filter(AdvisorLinks.college==college, AdvisorLinks.degree==degree).join(AdvisorLinks, AdvisorLinks.advisor==Advisors.id).all()

@@ -124,10 +124,29 @@ class Scheduling(Base):
 class Advisors(Base):
     __tablename__ = "Advisors"
 
-    college = Column(String)
-    degree = Column(String, primary_key = True)
-    adv_name = Column(String, primary_key = True)
-    adv_email = Column(String)
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    email = Column(String)
+
+class Colleges(Base):
+    __tablename__ = "Colleges"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+
+class Degrees(Base):
+    __tablename__ = "Degrees"
+
+    id = Column(Integer, primary_key=True)
+    collegeId = Column(Integer)
+    name = Column(String )
+
+class AdvisorLinks(Base):
+    __tablename__ = "AdvisorLinks"
+
+    advisor = Column(Integer, primary_key=True)
+    college = Column(Integer, primary_key=True)
+    degree = Column(Integer, primary_key=True)
 
 class Schedule(Base):
     __tablename__ = "Schedule"
