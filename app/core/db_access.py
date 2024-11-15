@@ -24,4 +24,4 @@ def getUserById(id: int):
     return session.query(User).filter(User.id==id).first()
 
 def getUsers():
-    return session.query(User).first()
+    return session.query(User).all()
