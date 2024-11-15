@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routers import test, auth, messaging, news, events, user, schedule
+from app.routers import auth, messaging, news, events, user, schedule
 
 app = FastAPI()
 
@@ -21,7 +21,6 @@ for ease of understanding.
 
 app.include_router(auth.router)
 app.include_router(messaging.router)
-app.include_router(test.router)
 app.include_router(news.router)
 app.include_router(events.router)
 app.include_router(user.router)
