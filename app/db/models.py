@@ -148,6 +148,14 @@ class AdvisorLinks(Base):
     college = Column(Integer, primary_key=True)
     degree = Column(Integer, primary_key=True)
 
+class AdvisorAvailibilities(Base):
+    __tablename__ = "AdvisorAvailibilities"
+
+    id = Column(Integer, primary_key=True)
+    advisor = Column(Integer)
+    startTime = Column(DateTime)
+    endTime = Column(DateTime)
+
 class Schedule(Base):
     __tablename__ = "Schedule"
 

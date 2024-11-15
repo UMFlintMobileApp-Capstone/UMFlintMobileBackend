@@ -1,9 +1,8 @@
 from fastapi import APIRouter, Depends
 from app.db.db import session
-from app.db.models import Schedule, Scheduling, User, Locations, Threads, Advisors, Degrees, Colleges, AdvisorLinks
+from app.db.models import Schedule, Scheduling, User, Locations, Threads, Advisors, Degrees, Colleges, AdvisorLinks, AdvisorAvailibilities
 from app.core.auth import getUserDetails
 from app.core.db_access import getUserByEmail
-from sqlalchemy import desc
 import uuid
 
 """
@@ -23,34 +22,74 @@ async def getStudentMeetingSchedules(user: User = Depends(getUserDetails)):
                 Schedule, Scheduling
             ).filter(
                 Schedule.user==user.email,
-                Schedule.uuid == Scheduling.uuid
+                Schedule.uuid == Scheduling.uuid,
+                Schedule.type == "student"
             ).all():
-        
-        schedule = meeting[0]
-        scheduling = meeting[1]
 
         users = []
 
         # get all users for a given meeting
-        for u in session.query(Schedule).filter(Schedule.uuid==schedule.uuid).all():
+        for u in session.query(Schedule).filter(Schedule.uuid==meeting[0].uuid).all():
             users.append({"user": getUserByEmail(u.user), "accepted": u.accepted}) 
 
-        location = session.query(Locations).filter(Locations.id==scheduling.location).first()
+        location = session.query(Locations).filter(Locations.id==meeting[1].location).first()
 
         # form dict and add to list
         meetings.append({
-            "uuid": scheduling.uuid,
-            "type": scheduling.type,
-            "title": scheduling.title,
-            "notes": scheduling.notes,
+            "uuid": meeting[1].uuid,
+            "type": meeting[1].type,
+            "title": meeting[1].title,
+            "notes": meeting[1].notes,
             "location": {
               "name": location.name,
               "building": location.building,
               "address": location.address  
             },
-            "date": scheduling.date,
-            "scheduler": scheduling.scheduler,
-            "threadUuid": scheduling.threadUuid,
+            "date": meeting[1].date,
+            "scheduler": meeting[1].scheduler,
+            "threadUuid": meeting[1].threadUuid,
+            "users": users
+            }
+        )
+    
+    # return all meetings
+    return {"meetings": meetings}
+
+@router.get("/schedule/advisor")
+async def getAdvisorMeetings(user: User = Depends(getUserDetails)):
+    meetings = []
+
+    # get all meetings for the current user
+    for meeting in session.query(
+                Schedule, Scheduling
+            ).filter(
+                Schedule.user==user.email,
+                Schedule.uuid == Scheduling.uuid,
+                Schedule.type == "advisor"
+            ).all():
+
+        users = []
+
+        # get all users for a given meeting
+        for u in session.query(Schedule).filter(Schedule.uuid==meeting[0].uuid).all():
+            users.append({"user": getUserByEmail(u.user), "accepted": u.accepted}) 
+
+        location = session.query(Locations).filter(Locations.id==meeting[1].location).first()
+
+        # form dict and add to list
+        meetings.append({
+            "uuid": meeting[1].uuid,
+            "type": meeting[1].type,
+            "title": meeting[1].title,
+            "notes": meeting[1].notes,
+            "location": {
+              "name": location.name,
+              "building": location.building,
+              "address": location.address  
+            },
+            "date": meeting[1].date,
+            "scheduler": meeting[1].scheduler,
+            "threadUuid": meeting[1].threadUuid,
             "users": users
             }
         )
@@ -102,6 +141,34 @@ async def addStudentMeeting(title: str, notes: str, date: str, location: int, us
     session.commit()
     return {"status": "success", "message": "Sucessfully added new meeting!"}
 
+@router.post("/schedule/advisor")
+async def addAdvisorMeeting(title: str, notes: str, date: str, location: int, users: str, user: User = Depends(getUserDetails)):
+    mId = uuid.uuid4()
+
+    session.add(
+        Scheduling(
+            uuid = mId,
+            type = "advisor",
+            title = title,
+            notes = notes,
+            location = location,
+            date = date,
+            scheduler = user.email
+        )
+    )
+
+    for u in users.split(",").append(user.email):
+        session.add(
+            Schedule(
+                uuid = mId,
+                user = u,
+                accepted = False
+            )
+        )
+    
+    session.commit()
+    return {"status": "success", "message": "Sucessfully scheduled advisor meeting!"}
+
 @router.post("/schedule/student/status")
 async def setStatusStudentMeeting(meeting: str, accept: bool, user: User = Depends(getUserDetails)):
     if accept:
@@ -137,16 +204,38 @@ async def setStatusStudentMeeting(meeting: str, accept: bool, user: User = Depen
 
 @router.get("/schedule/locations")
 async def getSchedulingLocations(user: User = Depends(getUserDetails)):
-    return session.query(Locations).all()
+    return session.query(
+            Locations
+        ).all()
 
 @router.get("/schedule/colleges")
 async def getSchedulingColleges(user: User = Depends(getUserDetails)):
-    return session.query(Colleges).all()
+    return session.query(
+            Colleges
+        ).all()
 
-@router.get("/schedule/degrees/college/{college}")
+@router.get("/schedule/college/{college}/degrees")
 async def getSchedulingDegrees(college: int, user: User = Depends(getUserDetails)):
-    return session.query(Degrees).filter(Degrees.collegeId==college).all()
+    return session.query(
+            Degrees
+        ).filter(
+            Degrees.collegeId==college
+        ).all()
 
-@router.get("/schedule/advisors/college/{college}/degree/{degree}")
+@router.get("/schedule/college/{college}/degree/{degree}/advisors")
 async def getSchedulingAdvisors(college: int, degree: int, user: User = Depends(getUserDetails)):
-    return session.query(Advisors).filter(AdvisorLinks.college==college, AdvisorLinks.degree==degree).join(AdvisorLinks, AdvisorLinks.advisor==Advisors.id).all()
+    return session.query(
+            Advisors
+        ).filter(
+            AdvisorLinks.college==college, AdvisorLinks.degree==degree
+        ).join(
+            AdvisorLinks, AdvisorLinks.advisor==Advisors.id
+        ).all()
+
+@router.get("/schedule/advisor/{advisor}/availibities")
+async def getSchedulingAdvisors(advisor: int, user: User = Depends(getUserDetails)):
+    return session.query(
+            AdvisorAvailibilities
+        ).filter(
+            AdvisorAvailibilities.advisor==advisor
+        ).all()
