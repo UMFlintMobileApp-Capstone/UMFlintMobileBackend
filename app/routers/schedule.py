@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from app.db.db import session
-from app.db.models import Schedule, Scheduling, User, Locations, Threads, Advisors, Degrees, Colleges, AdvisorLinks, AdvisorAvailibilities
+from app.db.models import Schedule, Scheduling, User, Locations, Threads, Advisors, Degrees, Colleges, AdvisorLinks, AdvisorAvailabilities
 from app.core.auth import getUserDetails
 from app.core.db_access import getUserByEmail
 import uuid
@@ -98,7 +98,7 @@ async def getAdvisorMeetings(user: User = Depends(getUserDetails)):
     return {"meetings": meetings}
 
 @router.post("/schedule/student")
-async def addStudentMeeting(title: str, notes: str, date: str, location: int, users: str, user: User = Depends(getUserDetails)):
+async def addStudentMeeting(title: str, notes: str, startTime: str, endTime: str, location: int, users: str, user: User = Depends(getUserDetails)):
     tId = uuid.uuid4()
     mId = uuid.uuid4()
 
@@ -110,7 +110,8 @@ async def addStudentMeeting(title: str, notes: str, date: str, location: int, us
             notes = notes,
             location = location,
             threadUuid = tId,
-            date = date,
+            startDate = startTime,
+            endDate = endTime,
             scheduler = user.email
         )
     )
@@ -142,7 +143,7 @@ async def addStudentMeeting(title: str, notes: str, date: str, location: int, us
     return {"status": "success", "message": "Sucessfully added new meeting!"}
 
 @router.post("/schedule/advisor")
-async def addAdvisorMeeting(title: str, notes: str, date: str, location: int, users: str, user: User = Depends(getUserDetails)):
+async def addAdvisorMeeting(title: str, notes: str, startTime: str, endTime: str, location: int, users: str, user: User = Depends(getUserDetails)):
     mId = uuid.uuid4()
 
     session.add(
@@ -152,7 +153,8 @@ async def addAdvisorMeeting(title: str, notes: str, date: str, location: int, us
             title = title,
             notes = notes,
             location = location,
-            date = date,
+            startDate = startTime,
+            endDate = endTime,
             scheduler = user.email
         )
     )
@@ -162,7 +164,7 @@ async def addAdvisorMeeting(title: str, notes: str, date: str, location: int, us
             Schedule(
                 uuid = mId,
                 user = u,
-                accepted = False
+                accepted = True
             )
         )
     
@@ -232,10 +234,18 @@ async def getSchedulingAdvisors(college: int, degree: int, user: User = Depends(
             AdvisorLinks, AdvisorLinks.advisor==Advisors.id
         ).all()
 
-@router.get("/schedule/advisor/{advisor}/availibities")
-async def getSchedulingAdvisors(advisor: int, user: User = Depends(getUserDetails)):
+@router.get("/schedule/advisor/{advisor}/availabilities")
+async def getSchedulingAdvisorsAvailabilities(advisor: int, user: User = Depends(getUserDetails)):
     return session.query(
-            AdvisorAvailibilities
+            AdvisorAvailabilities
         ).filter(
-            AdvisorAvailibilities.advisor==advisor
+            AdvisorAvailabilities.advisor==advisor,
+            AdvisorAvailabilities.startTime!=Scheduling.startDate,
+            AdvisorAvailabilities.endTime!=Scheduling.endDate
+        ).join(
+            Advisors, Advisors.id==advisor
+        ).join(
+            Schedule, Schedule.user==Advisors.email
+        ).join(
+            Scheduling, Scheduling.uuid==Schedule.uuid
         ).all()

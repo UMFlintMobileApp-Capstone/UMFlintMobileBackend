@@ -117,7 +117,8 @@ class Scheduling(Base):
     notes = Column(Text)
     location = Column(String)
     threadUuid = Column(UUID, nullable=True)
-    date = Column(DateTime)
+    startDate = Column(DateTime)
+    endDate = Column(DateTime)
     scheduler = Column(String)
 
 #Both the degree and advisor name are primary keys in the case of multiple advisors for the same degree
@@ -148,8 +149,8 @@ class AdvisorLinks(Base):
     college = Column(Integer, primary_key=True)
     degree = Column(Integer, primary_key=True)
 
-class AdvisorAvailibilities(Base):
-    __tablename__ = "AdvisorAvailibilities"
+class AdvisorAvailabilities(Base):
+    __tablename__ = "AdvisorAvailabilities"
 
     id = Column(Integer, primary_key=True)
     advisor = Column(Integer)
@@ -169,6 +170,6 @@ class Locations(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String)
     building = Column(String, nullable=True)
-    address = Column(Text, nullable=True)
+    address = Column(Text, nullable=True) 
 
 Base.metadata.create_all(engine)
