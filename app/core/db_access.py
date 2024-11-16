@@ -18,10 +18,33 @@ def get_hours():
     return session.query(BuildingHours).all()
 
 def getUserByEmail(email: str):
-    return session.query(User).filter(User.email==email).first()
+    user = session.query(User).filter(User.email==email)
+    if user.count() != 0:
+        return user.first()
+    else:
+        return {
+            "email": email,
+            "firstname": "",
+            "role": 0,
+            "id": -1,
+            "surname": "",
+            "profilePicture": ""
+            }
 
 def getUserById(id: int):
-    return session.query(User).filter(User.id==id).first()
+    user = session.query(User).filter(User.id==id)
+    if user.count() != 0:
+        return user.first()
+    else:
+        return {
+            "email": "",
+            "firstname": "",
+            "role": 0,
+            "id": id,
+            "surname": "",
+            "profilePicture": ""
+            }
+
 
 def getUsers():
     return session.query(User).all()
