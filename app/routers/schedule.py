@@ -5,9 +5,6 @@ from app.core.auth import getUserDetails
 from app.core.db_access import getUserByEmail
 import uuid
 from ics import Calendar, Event, Attendee
-import re
-import datetime
-import zoneinfo
 
 """
 <app/routers/schedule.py>
