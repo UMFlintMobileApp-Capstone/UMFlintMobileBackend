@@ -146,15 +146,15 @@ async def addStudentMeeting(title: str, notes: str, startTime: str, endTime: str
     return {"status": "success", "message": "Sucessfully added new meeting!"}
 
 @router.post("/schedule/advisor")
-async def addAdvisorMeeting(title: str, notes: str, startTime: str, endTime: str, location: int, users: str, user: User = Depends(getUserDetails)):
+async def addAdvisorMeeting(reason: str, startTime: str, endTime: str, location: int, advisor: str, user: User = Depends(getUserDetails)):
     mId = uuid.uuid4()
-
+    
     session.add(
         Scheduling(
             uuid = mId,
             type = "advisor",
-            title = title,
-            notes = notes,
+            title = user.firstname+" "+user.surname+"'s Advisor Meeting",
+            notes = reason,
             location = location,
             startDate = startTime,
             endDate = endTime,
@@ -162,14 +162,20 @@ async def addAdvisorMeeting(title: str, notes: str, startTime: str, endTime: str
         )
     )
 
-    for u in users.split(",").append(user.email):
-        session.add(
-            Schedule(
-                uuid = mId,
-                user = u,
-                accepted = True
-            )
+    session.add(
+        Schedule(
+            uuid = mId,
+            user = user.email,
+            accepted = True
         )
+    )
+    session.add(
+        Schedule(
+            uuid = mId,
+            user = advisor,
+            accepted = True
+        )
+    )
     
     session.commit()
     return {"status": "success", "message": "Sucessfully scheduled advisor meeting!"}
