@@ -1,9 +1,13 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from app.db.db import session
 from app.db.models import Schedule, Scheduling, User, Locations, Threads, Advisors, Degrees, Colleges, AdvisorLinks, AdvisorAvailabilities
 from app.core.auth import getUserDetails
 from app.core.db_access import getUserByEmail
 import uuid
+from ics import Calendar, Event, Attendee
+import re
+import datetime
+import zoneinfo
 
 """
 <app/routers/schedule.py>
@@ -23,7 +27,7 @@ async def getStudentMeetingSchedules(user: User = Depends(getUserDetails)):
             ).filter(
                 Schedule.user==user.email,
                 Schedule.uuid == Scheduling.uuid,
-                Schedule.type == "student"
+                Scheduling.type == "student"
             ).all():
 
         users = []
@@ -45,7 +49,8 @@ async def getStudentMeetingSchedules(user: User = Depends(getUserDetails)):
               "building": location.building,
               "address": location.address  
             },
-            "date": meeting[1].date,
+            "startDate": meeting[1].startDate,
+            "endDate": meeting[1].endDate,
             "scheduler": meeting[1].scheduler,
             "threadUuid": meeting[1].threadUuid,
             "users": users
@@ -65,7 +70,7 @@ async def getAdvisorMeetings(user: User = Depends(getUserDetails)):
             ).filter(
                 Schedule.user==user.email,
                 Schedule.uuid == Scheduling.uuid,
-                Schedule.type == "advisor"
+                Scheduling.type == "advisor"
             ).all():
 
         users = []
@@ -87,7 +92,8 @@ async def getAdvisorMeetings(user: User = Depends(getUserDetails)):
               "building": location.building,
               "address": location.address  
             },
-            "date": meeting[1].date,
+            "startDate": meeting[1].startDate,
+            "endDate": meeting[1].endDate,
             "scheduler": meeting[1].scheduler,
             "threadUuid": meeting[1].threadUuid,
             "users": users
@@ -249,3 +255,34 @@ async def getSchedulingAdvisorsAvailabilities(advisor: int, user: User = Depends
         ).join(
             Scheduling, Scheduling.uuid==Schedule.uuid
         ).all()
+
+@router.get("/schedule/meeting/{id}/ical")
+async def getiCalForMeeting(id: str, user: User = Depends(getUserDetails)):
+    c = Calendar()
+    e = Event()
+
+    meeting = session.query(
+            Schedule, Scheduling
+        ).filter(
+            Scheduling.uuid==id,
+            Schedule.uuid==Scheduling.uuid,
+            Schedule.user==user.email
+        ).first()
+    
+    for u in session.query(Schedule).filter(Schedule.uuid==meeting[0].uuid, Schedule.accepted==True).all():
+        e.add_attendee(Attendee(email=u.user))
+
+    e.name = meeting[1].title
+    e.begin = meeting[1].startDate
+    e.end = meeting[1].endDate
+    e.description = meeting[1].notes
+    e.location = session.query(Locations).filter(Locations.id==meeting[1].location).first().name
+    e.organizer = meeting[0].user
+
+    c.events.add(e)
+
+    # !! Bug currently where the time is assumed to be UTC even though it's Eastern
+    # This is a problem with this ical library (ics) not supporting time zones
+    # Need to either switch libraries or convert eastern to utc
+    return Response(content=c.serialize(), media_type="text/calendar")
+

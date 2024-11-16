@@ -6,3 +6,4 @@ psycopg2==2.9.10
 uvicorn==0.32.0
 requests==2.32.3
 google-auth-oauthlib==1.2.1
+ics==0.7.2
