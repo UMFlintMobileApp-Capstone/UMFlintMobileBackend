@@ -9,6 +9,22 @@ from ics import Calendar, Event, Attendee
 """
 <app/routers/schedule.py>
 
+Handles scheduling meetings between students, advisor meetings, and room booking.
+
+Student:
+    - Group or Individual
+    - Automatically creates a chat thread
+    - Invite, seperate route for accepting invite
+
+Advisor:
+    - One-to-one
+    - Availabilities
+
+Room:
+    - Group or Individual
+    - Availabilities
+    - Locations
+
 """
 
 # create the router
