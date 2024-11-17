@@ -1,4 +1,5 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
+from fastapi.responses import HTMLResponse
 from app.db.db import session
 from app.db.models import Messages, Threads, User, Blocks, Announcements
 from app.core.connectionmanager import ConnectionManager
@@ -314,3 +315,59 @@ async def deleteThread(id: str, user: User = Depends(getUserDetails)):
         return {"status": "success", "message": "Sucessfully deleted thread '"+id+"'!"}
     
     return {"status": "failure", "message": "Couldn't delete '"+id+"' because either you do not own it, or it doesn't exist."}
+
+# this is a html5 example of how sending messages can work with websockets
+@router.get("/messages/test")
+def a(user: User = Depends(getUserDetails)):
+    return HTMLResponse("""
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Chat</title>
+    </head>
+    <body>
+        <h1>WebSocket Chat</h1>
+        <h2>Your ID: <span id="ws-id"></span></h2>
+        <form action="" onsubmit="sendMessage(event)">
+            <label>To: </label><input type="text" id="to" autocomplete="off"/>
+            <label>Message: </label><input type="text" id="messageText" autocomplete="off"/>
+            <button>Send</button>
+        </form>
+        <ul id='messages'>
+        </ul>
+        <script>
+            var client_id = """+user.id+"""
+            document.querySelector("#ws-id").textContent = client_id;
+            var ws = new WebSocket(`ws://localhost:8000/messaging/ws/?token=`+client_id);
+            ws.onmessage = function(event) {
+                data = JSON.parse(event.data)
+                console.log(data);
+                if(data.type==="personal"){
+                    var messages = document.getElementById('messages')
+                    var message = document.createElement('li')
+                    var content = document.createTextNode("You wrote "+data.text+" to user "+data.to)
+                    message.appendChild(content)
+                    messages.appendChild(message)
+                }else if(data.type==="dm"){
+                    var messages = document.getElementById('messages')
+                    var message = document.createElement('li')
+                    var content = document.createTextNode("User "+data.id+" wrote: "+data.text)
+                    message.appendChild(content)
+                    messages.appendChild(message)
+                }
+            };
+            function sendMessage(event) {
+                const msg = {
+                    type: "message",
+                    to: [document.getElementById('to').value],
+                    text: document.getElementById('messageText').value,
+                    id: client_id,
+                    date: new Date(Date.now()).toLocaleString(),
+                };
+                ws.send(JSON.stringify(msg));
+                event.preventDefault()
+            }
+        </script>
+    </body>
+</html>
+""")
