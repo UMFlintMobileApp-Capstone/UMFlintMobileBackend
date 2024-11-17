@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Response
 from app.db.db import session
-from app.db.models import Schedule, Scheduling, User, Locations, Threads, Advisors, Degrees, Colleges, AdvisorLinks, AdvisorAvailabilities
+from app.db.models import Schedule, Scheduling, User, Locations, Threads, Advisors, Degrees, Colleges, AdvisorLinks, AdvisorAvailabilities, RoomAvailabilities
 from app.core.auth import getUserDetails
 from app.core.db_access import getUserByEmail
 import uuid
@@ -92,7 +92,48 @@ async def getAdvisorMeetings(user: User = Depends(getUserDetails)):
             "startDate": meeting[1].startDate,
             "endDate": meeting[1].endDate,
             "scheduler": meeting[1].scheduler,
-            "threadUuid": meeting[1].threadUuid,
+            "users": users
+            }
+        )
+    
+    # return all meetings
+    return {"meetings": meetings}
+
+@router.get("/schedule/room")
+async def getRoomMeetings(user: User = Depends(getUserDetails)):
+    meetings = []
+
+    # get all meetings for the current user
+    for meeting in session.query(
+                Schedule, Scheduling
+            ).filter(
+                Schedule.user==user.email,
+                Schedule.uuid == Scheduling.uuid,
+                Scheduling.type == "room"
+            ).all():
+
+        users = []
+
+        # get all users for a given meeting
+        for u in session.query(Schedule).filter(Schedule.uuid==meeting[0].uuid).all():
+            users.append({"user": getUserByEmail(u.user), "accepted": u.accepted}) 
+
+        location = session.query(Locations).filter(Locations.id==meeting[1].location).first()
+
+        # form dict and add to list
+        meetings.append({
+            "uuid": meeting[1].uuid,
+            "type": meeting[1].type,
+            "title": meeting[1].title,
+            "notes": meeting[1].notes,
+            "location": {
+              "name": location.name,
+              "building": location.building,
+              "address": location.address  
+            },
+            "startDate": meeting[1].startDate,
+            "endDate": meeting[1].endDate,
+            "scheduler": meeting[1].scheduler,
             "users": users
             }
         )
@@ -180,6 +221,42 @@ async def addAdvisorMeeting(reason: str, startTime: str, endTime: str, location:
     session.commit()
     return {"status": "success", "message": "Sucessfully scheduled advisor meeting!"}
 
+@router.post("/schedule/room")
+async def addRoomScheduling(startTime: str, endTime: str, location: int, users: str, user: User = Depends(getUserDetails)):
+    mId = uuid.uuid4()
+    
+    session.add(
+        Scheduling(
+            uuid = mId,
+            type = "room",
+            title = user.firstname+" "+user.surname+"'s Room Booking",
+            location = location,
+            startDate = startTime,
+            endDate = endTime,
+            scheduler = user.email
+        )
+    )
+
+    session.add(
+        Schedule(
+            uuid = mId,
+            user = user.email,
+            accepted = True
+        )
+    )
+
+    for u in users.split(","):
+        session.add(
+            Schedule(
+                uuid = mId,
+                user = u,
+                accepted = False
+            )
+        )
+    
+    session.commit()
+    return {"status": "success", "message": "Sucessfully scheduled room!"}
+
 @router.post("/schedule/student/status")
 async def setStatusStudentMeeting(meeting: str, accept: bool, user: User = Depends(getUserDetails)):
     if accept:
@@ -258,6 +335,20 @@ async def getSchedulingAdvisorsAvailabilities(advisor: int, user: User = Depends
         ).join(
             Scheduling, Scheduling.uuid==Schedule.uuid
         ).all()
+
+@router.get("/schedule/room/{room}/availabilities")
+async def getSchedulingRoomAvailabilities(room: int, user: User = Depends(getUserDetails)):
+    return session.query(
+        RoomAvailabilities
+    ).filter(
+        RoomAvailabilities.id==room,
+        RoomAvailabilities.startTime!=Scheduling.startDate,
+        RoomAvailabilities.endTime!=Scheduling.endDate
+    ).join(
+        Locations, Locations.id==RoomAvailabilities.id
+    ).join(
+        Scheduling, Scheduling.location == room
+    ).all()
 
 @router.get("/schedule/meeting/{id}/ical")
 async def getiCalForMeeting(id: str, user: User = Depends(getUserDetails)):
