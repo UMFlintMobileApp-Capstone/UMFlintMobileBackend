@@ -77,7 +77,7 @@ def getAnnouncements(items, token):
 
 
 # return combined news items from db and api
-def get_news_items(items):
+def get_all_news(items):
     articles = []
 
     # get api news items

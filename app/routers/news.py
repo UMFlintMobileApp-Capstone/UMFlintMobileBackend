@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.core.data_process import get_news_items
+from app.core.data_process import get_all_news
 
 """ 
 <app/routers/news.py>
@@ -14,4 +14,4 @@ router = APIRouter()
 ## we can get the other 1-2 from our database (select top 2 desc)
 @router.get("/news/get/{items}")
 async def items(items):
-    return get_news_items(items)
+    return get_all_news(items)
