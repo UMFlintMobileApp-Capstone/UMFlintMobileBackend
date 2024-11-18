@@ -1,6 +1,10 @@
 from fastapi import APIRouter, Depends, Response
 from app.db.db import session
-from app.db.models import Schedule, Scheduling, User, Locations, Threads, Advisors, Degrees, Colleges, AdvisorLinks, AdvisorAvailabilities, RoomAvailabilities
+from app.db.models import (
+    Schedule, Scheduling, User, Locations, Threads, Advisors,
+    Degrees, Colleges, AdvisorLinks, AdvisorAvailabilities,
+    RoomAvailabilities
+)
 from app.core.auth import getUserDetails
 from app.core.db_access import getUserByEmail
 import uuid
