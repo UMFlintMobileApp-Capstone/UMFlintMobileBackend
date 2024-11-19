@@ -13,7 +13,8 @@ async def get_events(items):
     
     #initialize arrays for gathering events from API
     all_events = []
-    unique_events = []
+    
+    #unique_events = []
 
     """#get all group slugs first
     for slug in get_events_groups()['data']:
@@ -32,6 +33,8 @@ async def get_events(items):
             'location_type' : event['location_type'],
             'type' : event['type']
         }
+
+        all_events.append(events_json)
 
         """ #If there is an event with the same title, don't add
         if(event['title'] not in unique_events):
