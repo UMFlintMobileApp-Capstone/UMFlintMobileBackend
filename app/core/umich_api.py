@@ -11,3 +11,6 @@ def get_events_items():
 
 def get_events_groups():
     return r.get("https://events.umflint.edu/api/wp-block/groups/all").json()
+
+def get_academic_events():
+    return r.get("https://www.umflint.edu/registrar/wp-json/wp-content-types/academic-events/current").json()

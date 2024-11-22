@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routers import auth, messaging, news, events, user, schedule
+from app.routers import auth, messaging, news, events, user, schedule, academic_events
 
 app = FastAPI()
 
@@ -25,6 +25,7 @@ app.include_router(news.router)
 app.include_router(events.router)
 app.include_router(user.router)
 app.include_router(schedule.router)
+app.include_router(academic_events.router)
 
 @app.get("/")
 def read_root():
