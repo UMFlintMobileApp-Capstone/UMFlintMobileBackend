@@ -6,7 +6,7 @@ def get_news_items():
 def get_announcement_items():
     return r.get('https://www.umflint.edu/wp-json/wp-content-types/announcements').json()
 
-def get_events_items(slug):
+def get_events_items():
     return r.get("https://events.umflint.edu/api/events/promoted-feed").json()
 
 def get_events_groups():
