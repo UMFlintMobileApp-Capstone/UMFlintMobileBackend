@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.core.umich_api import get_events_groups, get_events_items
+from app.core.umich_api import get_events_items
 
 """ 
 <app/routers/events.py>
@@ -26,11 +26,10 @@ async def get_events(items):
             'id' : event['id'],
             'title' : event['title'],
             'description' : event['description'],
-            'url' : event['url'],
+            'url' : event['calendar_links'][0],
             'start_at' : event['start_at'],
             'end_at' : event['end_at'],
             'photo' : event['photo'],
-            'location_type' : event['location_type'],
             'type' : event['type']
         }
 
