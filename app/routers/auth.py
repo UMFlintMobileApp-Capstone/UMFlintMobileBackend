@@ -19,7 +19,7 @@ def login_app_callback(token: str):
 
     return {
         'status': 'success',
-        'message': f'Logged in with user: {user.email}'
+        'details': f'Logged in with user: {user.email}'
     }
 
 @router.get("/debug/create")

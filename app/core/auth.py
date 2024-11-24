@@ -58,10 +58,6 @@ def getUserDetails(token: str):
             os.getenv('GOOGLE_CLIENT_ID')
         )
 
-        # we only want our specific domain, raise 403 if not correct
-        if idinfo['hd'] != os.getenv('GOOGLE_AUTHORIZED_DOMAIN'):
-            raise HTTPException(status_code=403, detail="Invalid domain credentials")
-
         # try to find an existing user, if none the orm raises an exception
         # if they exist, just return the user information
         try:
@@ -78,8 +74,14 @@ def getUserDetails(token: str):
                 profilePicture=idinfo['picture']
             )
             session.add(user)
-            session.commit()
-            return user
+
+            try:
+                session.commit()
+            except:
+                session.rollback()
+                raise
+
+            return user 
 
     # this is assuming invalid credentials
     except ValueError:
