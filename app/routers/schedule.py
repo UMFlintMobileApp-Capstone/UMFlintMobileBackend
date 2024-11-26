@@ -316,6 +316,27 @@ async def getSchedulingLocations(user: User = Depends(getUserDetails)):
             Locations
         ).all()
 
+@router.get("/schedule/locations/buildings")
+async def getSchedulingBuildings(user: User = Depends(getUserDetails)):
+    buildings = []
+    
+    for x in session.query(Locations).distinct(
+            Locations.building
+        ).where(
+            Locations.building != None
+        ).all():
+        buildings.append({"name": x.building})
+     
+    return buildings
+
+@router.get("/schedule/locations/building/{building}/rooms")
+async def getSchedulingRooms(building: str, user: User = Depends(getUserDetails)):
+    return session.query(
+            Locations
+        ).where(
+            Locations.building==building
+        ).all()
+
 @router.get("/schedule/colleges")
 async def getSchedulingColleges(user: User = Depends(getUserDetails)):
     return session.query(
@@ -361,13 +382,7 @@ async def getSchedulingRoomAvailabilities(room: int, user: User = Depends(getUse
     return session.query(
         RoomAvailabilities
     ).filter(
-        RoomAvailabilities.id==room,
-        RoomAvailabilities.startTime!=Scheduling.startDate,
-        RoomAvailabilities.endTime!=Scheduling.endDate
-    ).join(
-        Locations, Locations.id==RoomAvailabilities.id
-    ).join(
-        Scheduling, Scheduling.location == room
+        RoomAvailabilities.id==room
     ).all()
 
 @router.get("/schedule/meeting/{id}/ical")

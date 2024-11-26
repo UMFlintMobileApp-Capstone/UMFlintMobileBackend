@@ -60,7 +60,7 @@ class BuildingHours(Base):
 class User(Base):
     __tablename__  = "Users"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(String, primary_key=True)
     email = Column(String)
     firstname = Column(String)
     surname = Column(String)
@@ -176,7 +176,7 @@ class RoomAvailabilities(Base):
     __tablename__ = "RoomAvailabilities"
 
     id = Column(Integer, primary_key=True)
-    startTime = Column(DateTime)
-    endTime = Column(DateTime)
+    startTime = Column(DateTime, primary_key=True)
+    endTime = Column(DateTime, primary_key=True)
 
 Base.metadata.create_all(engine)
