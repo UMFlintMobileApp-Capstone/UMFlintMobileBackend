@@ -50,7 +50,7 @@ def getAnnouncements(items, token):
 
         # get all the roles (and since it's comma seperated, iterate)
         for role in announcement.role.split(","):
-            if role <= r:
+            if int(role) <= r:
                 add = True
 
         if add:
@@ -59,7 +59,7 @@ def getAnnouncements(items, token):
                         'id': announcement.id,
                         'title': announcement.title,
                         'description':announcement.description,
-                        'dateStart': announcement.dateStart,
+                        'dateStart': str(announcement.dateStart),
                         'dateEnd': announcement.dateEnd
                     }
 
