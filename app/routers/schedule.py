@@ -242,7 +242,7 @@ async def addAdvisorMeeting(reason: str, startTime: str, endTime: str, location:
     return {"status": "success", "message": "Sucessfully scheduled advisor meeting!"}
 
 @router.post("/schedule/room")
-async def addRoomScheduling(startTime: str, endTime: str, location: int, users: str, user: User = Depends(getUserDetails)):
+async def addRoomScheduling(startTime: str, endTime: str, location: int, users: str = "", user: User = Depends(getUserDetails)):
     mId = uuid.uuid4()
     
     session.add(
@@ -360,6 +360,41 @@ async def getSchedulingAdvisors(college: int, degree: int, user: User = Depends(
         ).join(
             AdvisorLinks, AdvisorLinks.advisor==Advisors.id
         ).all()
+
+@router.get("/schedule/{college}/advisors")
+async def getSchedulingAdvisorsByCollege(college: int, user: User = Depends(getUserDetails)):
+    advisors = []
+    
+    for advisor in session.query(
+        Advisors
+    ).filter(
+        AdvisorLinks.college==college
+    ).join(
+        AdvisorLinks, AdvisorLinks.advisor==Advisors.id
+    ).all():
+        degrees = []
+
+        for degree in session.query(
+            Degrees
+        ).filter(
+            Degrees.id==AdvisorLinks.degree
+        ).join(
+            AdvisorLinks, AdvisorLinks.advisor==advisor.id
+        ):
+            degrees.append({
+                "id": degree.id,
+                "name": degree.name
+            })
+
+        advisors.append({
+            "id": advisor.id,
+            "name": advisor.name,
+            "email": advisor.email,
+            "degrees": degrees
+        })
+
+    return advisors
+
 
 @router.get("/schedule/advisor/{advisor}/availabilities")
 async def getSchedulingAdvisorsAvailabilities(advisor: int, user: User = Depends(getUserDetails)):
