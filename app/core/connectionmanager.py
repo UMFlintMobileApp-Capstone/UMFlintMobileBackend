@@ -10,7 +10,7 @@ class ConnectionManager:
 
     def disconnect(self, websocket: WebSocket):
         for connection in self.active_connections:
-            if connection.websocket==websocket:
+            if connection['websocket']==websocket:
                 self.active_connections.remove(connection)
 
     async def pm(self, message: dict, websocket: WebSocket):
