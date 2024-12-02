@@ -61,7 +61,7 @@ async def websocketEndpoint(websocket: WebSocket, user: User = Depends(getUserDe
                 'type': 'personal',
                 'text': data['text'],
                 'to': data['to'],
-                'id': data['id'],
+                'from': user.email,
                 'date': data['date']
             }
 
@@ -137,8 +137,8 @@ async def getThreads(user: User = Depends(getUserDetails)):
         users = []
 
         # get all users for a given thread
-        for u in session.query(Threads).filter(Threads.uuid==thread.uuid).all():
-            users.append({"user": getUserByEmail(u.user)})
+        for u in session.query(Threads).filter(Threads.uuid==thread.uuid, Threads.user!=user.email).all():
+            users.append(getUserByEmail(u.user))
         
         # get the most recent message
         lastMessage = session.query(Messages).filter(
@@ -166,7 +166,7 @@ async def getThreads(user: User = Depends(getUserDetails)):
         )
     
     # return all threads
-    return {"threads": threads}
+    return threads
 
 # get a thread's messages given it's uuid
 @router.get("/messages/chat/{id}")
@@ -189,7 +189,7 @@ async def getMessages(token: str, id: str):
             })
 
         # return all messages
-        return {"messages": messages}
+        return messages
 
 # add a user to a given thread
 @router.post("/messages/user")
@@ -351,7 +351,7 @@ def a(user: User = Depends(getUserDetails)):
                 }else if(data.type==="dm"){
                     var messages = document.getElementById('messages')
                     var message = document.createElement('li')
-                    var content = document.createTextNode("User "+data.id+" wrote: "+data.text)
+                    var content = document.createTextNode("User "+data.from+" wrote: "+data.text)
                     message.appendChild(content)
                     messages.appendChild(message)
                 }
@@ -361,7 +361,6 @@ def a(user: User = Depends(getUserDetails)):
                     type: "message",
                     to: [document.getElementById('to').value],
                     text: document.getElementById('messageText').value,
-                    id: client_id,
                     date: new Date(Date.now()).toLocaleString(),
                 };
                 ws.send(JSON.stringify(msg));
