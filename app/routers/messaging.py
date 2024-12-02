@@ -156,11 +156,20 @@ async def createThread(recipient: str, user: User = Depends(getUserDetails)):
                 user = recipient
             )
         )
-        
+
         session.commit()
     # if we don't need to create a thread, we do need the existing thread uuid        
     else:
         tId = session.query(Threads.uuid).filter(Threads.user==recipient).first().uuid
+
+        session.add(
+            Threads(
+                uuid = tId,
+                user = user.email
+            )
+        )
+
+        session.commit()
 
     return {"threadCreated":createThread,"threadUuid":tId}
 
