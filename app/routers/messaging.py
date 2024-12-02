@@ -127,6 +127,43 @@ async def websocketEndpoint(websocket: WebSocket, user: User = Depends(getUserDe
         # disconnect the socket when a user leaves, we can also send a message to other users if we wanted
         manager.disconnect(websocket)
 
+@router.post("/messages/create/thread")
+async def createThread(recipient: str, user: User = Depends(getUserDetails)):
+    # do we want to create a thread? default is no
+    createThread = False
+
+    # for every recipient
+    if session.query(Threads.uuid).filter(Threads.user==recipient).count() == 0:
+        createThread = True
+    
+    # when we need to create a thread
+    if createThread:
+        # generate the thread uuid
+        tId = uuid.uuid4()
+
+        # create and add to session the new thread for the sender
+        session.add(
+            Threads(
+                uuid = tId,
+                user = user.email
+            )
+        )
+
+        # create and add to session new thread for the recipient
+        session.add(
+            Threads(
+                uuid = tId,
+                user = recipient
+            )
+        )
+        
+        session.commit()
+    # if we don't need to create a thread, we do need the existing thread uuid        
+    else:
+        tId = session.query(Threads.uuid).filter(Threads.user==recipient).first().uuid
+
+    return {"threadCreated":createThread,"threadUuid":tId}
+
 # get all threads for the current user, the users involved, and the most recent message
 @router.get("/messages/")
 async def getThreads(user: User = Depends(getUserDetails)):
@@ -225,12 +262,7 @@ async def removeUserFromThread(deleteUser: str, threadUuid: str, user: User = De
 
         # delete the user if they are a part of the thread
         if toBeDeletedUser.one_or_none != None:
-            session.delete(
-                Threads(
-                    uuid = threadUuid,
-                    user = deleteUser
-                )
-            )
+            toBeDeletedUser.delete()
             session.commit()
             return {"status": "success", "message": "Sucessfully deleted user '"+deleteUser+"' from thread '"+threadUuid+"'!"}
         
@@ -306,10 +338,10 @@ async def deleteThread(id: str, user: User = Depends(getUserDetails)):
         # if there's only the current user, then we can just delete all the messages
         if thread.count() == 1:
             messages = session.query(Messages).filter(Messages.chatUuid==id)
-            session.delete(messages)
+            messages.delete()
 
         # delete the thread
-        session.delete(thread)
+        thread.delete()
         session.commit()
 
         return {"status": "success", "message": "Sucessfully deleted thread '"+id+"'!"}
