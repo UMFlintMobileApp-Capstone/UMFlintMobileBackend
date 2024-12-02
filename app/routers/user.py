@@ -12,14 +12,18 @@ from app.core.db_access import getUserByEmail, getUserById, getUsers
 # create the router
 router = APIRouter()
 
-@router.get("/user/byId/{id}")
+@router.get("/users/byId/{id}")
 def getUserId(id: int, user: User = Depends(getUserDetails)):
     return getUserById(id)
 
-@router.get("/user/byEmail/{email}")
+@router.get("/users/byEmail/{email}")
 def getUserEmail(email: str, user: User = Depends(getUserDetails)):
     return getUserByEmail(email)
 
-@router.get("/users")
+@router.get("/users/list")
 def getUser(user: User = Depends(getUserDetails)):
     return getUsers()
+
+@router.get("/users/me")
+def getMe(user: User = Depends(getUserDetails)):
+    return user
