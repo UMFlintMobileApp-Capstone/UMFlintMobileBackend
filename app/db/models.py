@@ -128,6 +128,7 @@ class Advisors(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String)
     email = Column(String)
+    url = Column(String, nullable=True)
 
 class Colleges(Base):
     __tablename__ = "Colleges"

@@ -390,7 +390,8 @@ async def getSchedulingAdvisorsByCollege(college: int, user: User = Depends(getU
             "id": advisor.id,
             "name": advisor.name,
             "email": advisor.email,
-            "degrees": degrees
+            "degrees": degrees,
+            "curl": advisor.url
         })
 
     return advisors
