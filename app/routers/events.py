@@ -41,7 +41,7 @@ async def get_events(items):
             unique_events.append(event['title'])
         """
     #sort array by unix Epoch
-    all_events.sort(key = lambda start: start['start_at'], reverse=True)
+    all_events.sort(key = lambda start: start['start_at'])
     
     #grab top most events
     if(items.isnumeric()):
