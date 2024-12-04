@@ -311,13 +311,13 @@ async def setStatusStudentMeeting(meeting: str, accept: bool, user: User = Depen
         return {"status": "success", "message": "Declined meeting!"}
 
 @router.get("/schedule/locations")
-async def getSchedulingLocations(user: User = Depends(getUserDetails)):
+async def getSchedulingLocations():
     return session.query(
             Locations
         ).all()
 
 @router.get("/schedule/locations/buildings")
-async def getSchedulingBuildings(user: User = Depends(getUserDetails)):
+async def getSchedulingBuildings():
     buildings = []
     
     for x in session.query(Locations).distinct(
@@ -330,7 +330,7 @@ async def getSchedulingBuildings(user: User = Depends(getUserDetails)):
     return buildings
 
 @router.get("/schedule/locations/building/{building}/rooms")
-async def getSchedulingRooms(building: str, user: User = Depends(getUserDetails)):
+async def getSchedulingRooms(building: str):
     return session.query(
             Locations
         ).where(
@@ -338,13 +338,13 @@ async def getSchedulingRooms(building: str, user: User = Depends(getUserDetails)
         ).all()
 
 @router.get("/schedule/colleges")
-async def getSchedulingColleges(user: User = Depends(getUserDetails)):
+async def getSchedulingColleges():
     return session.query(
             Colleges
         ).all()
 
 @router.get("/schedule/college/{college}/degrees")
-async def getSchedulingDegrees(college: int, user: User = Depends(getUserDetails)):
+async def getSchedulingDegrees(college: int):
     return session.query(
             Degrees
         ).filter(
@@ -352,7 +352,7 @@ async def getSchedulingDegrees(college: int, user: User = Depends(getUserDetails
         ).all()
 
 @router.get("/schedule/college/{college}/degree/{degree}/advisors")
-async def getSchedulingAdvisors(college: int, degree: int, user: User = Depends(getUserDetails)):
+async def getSchedulingAdvisors(college: int, degree: int):
     return session.query(
             Advisors
         ).filter(
@@ -362,7 +362,7 @@ async def getSchedulingAdvisors(college: int, degree: int, user: User = Depends(
         ).all()
 
 @router.get("/schedule/{college}/advisors")
-async def getSchedulingAdvisorsByCollege(college: int, user: User = Depends(getUserDetails)):
+async def getSchedulingAdvisorsByCollege(college: int):
     advisors = []
     
     for advisor in session.query(
@@ -398,7 +398,7 @@ async def getSchedulingAdvisorsByCollege(college: int, user: User = Depends(getU
 
 
 @router.get("/schedule/advisor/{advisor}/availabilities")
-async def getSchedulingAdvisorsAvailabilities(advisor: int, user: User = Depends(getUserDetails)):
+async def getSchedulingAdvisorsAvailabilities(advisor: int):
     return session.query(
             AdvisorAvailabilities
         ).filter(
@@ -414,7 +414,7 @@ async def getSchedulingAdvisorsAvailabilities(advisor: int, user: User = Depends
         ).all()
 
 @router.get("/schedule/room/{room}/availabilities")
-async def getSchedulingRoomAvailabilities(room: int, user: User = Depends(getUserDetails)):
+async def getSchedulingRoomAvailabilities(room: int):
     return session.query(
         RoomAvailabilities
     ).filter(
