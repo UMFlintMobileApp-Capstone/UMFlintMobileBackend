@@ -199,7 +199,7 @@ async def addStudentMeeting(title: str, notes: str, startTime: str, endTime: str
             Schedule(
                 uuid = mId,
                 user = u,
-                accepted = False
+                accepted = True
             )
         )
     
