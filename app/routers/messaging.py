@@ -379,7 +379,7 @@ def a(user: User = Depends(getUserDetails)):
         <script>
             var client_id = """+user.id+"""
             document.querySelector("#ws-id").textContent = client_id;
-            var ws = new WebSocket(`ws://localhost:8000/messaging/ws/?token=debug`);
+            var ws = new WebSocket(`wss://umflintapp.troxal.com/messaging/ws/?token=debug`);
             ws.onmessage = function(event) {
                 data = JSON.parse(event.data)
                 console.log(data);
