@@ -316,6 +316,30 @@ async def getSchedulingLocations():
             Locations
         ).all()
 
+@router.get("/schedule/locations/usable")
+async def getUsableSchedulingLocations(user: User = Depends(getUserDetails)):
+    locations = []
+
+    for room in session.query(
+        Locations
+    ).filter(
+        Schedule.uuid==Scheduling.uuid,
+        Schedule.user==user.email,
+        Locations.id==Scheduling.location
+    ).all():
+        locations.append(room)
+
+    locations.append(
+        Locations(
+            name = "Online",
+            building = None,
+            id = 0,
+            address = None
+        )
+    )
+
+    return locations
+
 @router.get("/schedule/locations/buildings")
 async def getSchedulingBuildings():
     buildings = []
