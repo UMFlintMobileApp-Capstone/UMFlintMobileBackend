@@ -187,6 +187,7 @@ async def addStudentMeeting(title: str, notes: str, startTime: str, endTime: str
             accepted = True
         )
     )
+
     session.add(
         Threads(
             uuid = tId,
@@ -202,7 +203,13 @@ async def addStudentMeeting(title: str, notes: str, startTime: str, endTime: str
                 accepted = True
             )
         )
-    
+        session.add(
+            Threads(
+                uuid = tId,
+                user = u
+            )
+        )
+
     session.commit()
     return {"status": "success", "message": "Sucessfully added new meeting!"}
 
