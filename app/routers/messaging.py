@@ -185,7 +185,7 @@ async def getThreads(user: User = Depends(getUserDetails)):
         # get all users for a given thread
         for u in session.query(Threads).filter(Threads.uuid==thread.uuid, Threads.user!=user.email).all():
             users.append(getUserByEmail(u.user))
-        
+
         # get the most recent message
         lastMessage = session.query(Messages).filter(
                 Messages.chatUuid==thread.uuid
@@ -344,13 +344,11 @@ async def deleteThread(id: str, user: User = Depends(getUserDetails)):
 
     # if there's still a thread
     if thread.count() > 0:
-        # if there's only the current user, then we can just delete all the messages
-        if thread.count() == 1:
-            messages = session.query(Messages).filter(Messages.chatUuid==id)
-            messages.delete()
+        messages = session.query(Messages).filter(Messages.chatUuid==id)
+        messages.delete()
 
-        # delete the thread
-        thread.delete()
+        session.query(Threads).filter(Threads.uuid==thread.one().uuid).delete()
+        
         session.commit()
 
         return {"status": "success", "message": "Sucessfully deleted thread '"+id+"'!"}
