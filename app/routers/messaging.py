@@ -133,8 +133,10 @@ async def createThread(recipient: str, user: User = Depends(getUserDetails)):
     createThread = False
 
     # for every recipient
-    if session.query(Threads.uuid).filter(Threads.user==recipient).count() == 0:
-        createThread = True
+    for x in session.query(Threads).filter(Threads.user==recipient).all():
+        if session.query(Threads).filter(Threads.user==x.user, Threads.uuid==x.uuid).one_or_none == None:
+            createThread = True
+            break
     
     # when we need to create a thread
     if createThread:
