@@ -162,16 +162,38 @@ async def createThread(recipient: str, user: User = Depends(getUserDetails)):
         session.commit()
     # if we don't need to create a thread, we do need the existing thread uuid        
     else:
-        tId = session.query(Threads).filter(Threads.user==recipient).first().uuid
+        tId = session.query(Threads).filter(Threads.user==recipient).first()
 
-        session.add(
-            Threads(
-                uuid = tId,
-                user = user.email
+        if tId==None:
+            # generate the thread uuid
+            tId = uuid.uuid4()
+
+            # create and add to session the new thread for the sender
+            session.add(
+                Threads(
+                    uuid = tId,
+                    user = user.email
+                )
             )
-        )
 
-        session.commit()
+            # create and add to session new thread for the recipient
+            session.add(
+                Threads(
+                    uuid = tId,
+                    user = recipient
+                )
+            )
+
+            session.commit()
+        else:
+            session.add(
+                Threads(
+                    uuid = tId,
+                    user = user.email
+                )
+            )
+
+            session.commit()
 
     return {"threadCreated":createThread,"threadUuid":tId}
 
